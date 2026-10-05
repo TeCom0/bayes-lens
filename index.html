@@ -1,0 +1,1647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bayes Lens: one theorem, three worlds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F9FB; --panel:#FFFFFF; --ink:#1F2A3D; --muted:#5A6577; --rule:#D8DEE7;
+  --prior:#2C62A6; --prior-bg:#E6EEF9;
+  --lik:#9A6512; --lik-bg:#FBF0DC;
+  --evid:#5F6B7D; --evid-bg:#EDF0F4;
+  --post:#B02E5E; --post-bg:#F9E5EC;
+  --sick:#B02E5E; --healthy:#3F4D64; --faint:#C2CAD6;
+  --focus:#2C62A6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#131923; --panel:#1A2230; --ink:#E5E9F0; --muted:#9BA7B9; --rule:#2D394B;
+    --prior:#82AEEA; --prior-bg:#1D2D46;
+    --lik:#E4AC52; --lik-bg:#3A2D16;
+    --evid:#A3AEBF; --evid-bg:#243043;
+    --post:#EE7AA2; --post-bg:#3E1E2C;
+    --sick:#EE7AA2; --healthy:#B6C1D2; --faint:#3B475A;
+    --focus:#82AEEA;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131923; --panel:#1A2230; --ink:#E5E9F0; --muted:#9BA7B9; --rule:#2D394B;
+  --prior:#82AEEA; --prior-bg:#1D2D46;
+  --lik:#E4AC52; --lik-bg:#3A2D16;
+  --evid:#A3AEBF; --evid-bg:#243043;
+  --post:#EE7AA2; --post-bg:#3E1E2C;
+  --sick:#EE7AA2; --healthy:#B6C1D2; --faint:#3B475A;
+  --focus:#82AEEA;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:17px;line-height:1.55;font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:Literata,Georgia,"Times New Roman",serif;font-weight:600;line-height:1.2;margin:0}
+h1{font-size:clamp(2rem,4.5vw,2.8rem);letter-spacing:-0.01em}
+h2{font-size:clamp(1.5rem,3vw,1.95rem);margin-bottom:.4rem}
+h3{font-size:1.25rem;margin:0 0 .35rem}
+p{margin:0 0 .8rem}
+.prose{font-family:Literata,Georgia,serif;font-size:1.05rem;line-height:1.7;max-width:68ch}
+.muted{color:var(--muted)}
+a{color:var(--prior)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+
+/* header + tabs */
+header.site{padding:34px 0 0}
+header.site .sub{font-family:Literata,Georgia,serif;font-size:1.12rem;color:var(--muted);margin:.5rem 0 0;max-width:62ch}
+header.site .by{font-size:.92rem;color:var(--muted);margin-top:.6rem}
+nav.tabs{display:flex;gap:4px;margin-top:26px;border-bottom:1px solid var(--rule);overflow-x:auto}
+nav.tabs button{font:inherit;font-size:1rem;background:none;border:0;color:var(--muted);padding:10px 16px 12px;cursor:pointer;
+  border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink);font-weight:700}
+nav.tabs button .soon{font-size:.8rem;color:var(--muted);font-weight:400;margin-left:6px}
+section.tab{padding:30px 0 56px}
+section.tab[hidden]{display:none}
+
+/* equation: the centerpiece */
+.eqcard{background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:26px 24px 20px;margin:22px 0 10px}
+.eqscroll{overflow-x:auto}
+.eqrow{display:flex;align-items:center;gap:14px;font-family:Literata,Georgia,serif;font-size:clamp(1.02rem,2vw,1.3rem);min-width:max-content;padding:6px 0}
+.eqrow + .eqrow{margin-top:12px;padding-top:16px;border-top:1px dashed var(--rule)}
+.frac{display:inline-flex;flex-direction:column;align-items:center;text-align:center}
+.frac .num{padding:0 6px 6px}
+.frac .den{padding:6px 6px 0;border-top:2px solid var(--ink);position:relative}
+.frac .den.evidence{border-top-color:var(--evid)}
+.t{border-radius:6px;padding:1px 7px;white-space:nowrap}
+.t.prior{background:var(--prior-bg);color:var(--prior)}
+.t.lik{background:var(--lik-bg);color:var(--lik)}
+.t.post{background:var(--post-bg);color:var(--post);font-weight:600}
+.t.evid{background:var(--evid-bg);color:var(--evid)}
+.op{color:var(--muted)}
+.result{font-family:"Atkinson Hyperlegible",system-ui,sans-serif;font-weight:700;font-size:clamp(1.8rem,4vw,2.4rem);color:var(--post)}
+.key{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.9rem;color:var(--muted);margin-top:14px}
+.key span.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* lab layout */
+.lab{display:grid;grid-template-columns:minmax(260px,320px) 1fr;gap:28px;margin-top:28px;align-items:start}
+@media (max-width:820px){.lab{grid-template-columns:1fr}}
+.controls{display:flex;flex-direction:column;gap:18px}
+.presets{display:flex;flex-direction:column;gap:6px}
+.presets button,.btn{font:inherit;font-size:.93rem;text-align:left;background:var(--panel);color:var(--ink);border:1px solid var(--rule);border-radius:8px;padding:8px 12px;cursor:pointer}
+.presets button:hover,.btn:hover{border-color:var(--muted)}
+.presets button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.ctl label{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-weight:700;font-size:.98rem}
+.ctl .hint{font-weight:400;color:var(--muted);font-size:.86rem;display:block;margin-top:2px}
+.ctl input[type=number]{font:inherit;font-size:.95rem;width:88px;padding:3px 6px;border:1px solid var(--rule);border-radius:6px;background:var(--panel);color:var(--ink);text-align:right}
+.ctl input[type=range]{width:100%;margin-top:6px}
+#pRange{accent-color:var(--prior)} #sensRange,#specRange{accent-color:var(--lik)} #rhoRange{accent-color:var(--evid)}
+.readout{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px}
+.readout .big{font-size:2rem;font-weight:700;color:var(--post);line-height:1.1}
+.readout dl{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin:10px 0 0;font-size:.93rem}
+.readout dt{color:var(--muted)} .readout dd{margin:0;text-align:right;font-weight:700}
+
+figure{margin:0;background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:16px 16px 12px}
+figure svg{display:block;width:100%;height:auto}
+figcaption{font-size:.88rem;color:var(--muted);margin-top:10px;line-height:1.45}
+figcaption b{color:var(--ink)}
+.figtools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.figtools label{font-size:.92rem;display:flex;gap:8px;align-items:center}
+select{font:inherit;font-size:.92rem;padding:3px 6px;border:1px solid var(--rule);border-radius:6px;background:var(--panel);color:var(--ink)}
+
+/* dot grid */
+.g .tp{fill:var(--sick)}
+.g .fn{fill:none;stroke:var(--sick);stroke-width:1.6}
+.g .fp{fill:var(--healthy)}
+.g .tn{fill:none;stroke:var(--faint);stroke-width:1.3}
+.g.onlypos .fn,.g.onlypos .tn{opacity:.12}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem;margin-top:10px}
+.legend svg{width:14px;height:14px;display:inline-block;vertical-align:-2px;margin-right:6px}
+.posbar{margin-top:14px}
+.posbar .lbl{font-size:.9rem;margin-bottom:4px}
+.posbar .bar{display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid var(--rule)}
+.posbar .bar div{display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap}
+.posbar .s{background:var(--sick);color:var(--panel)}
+.posbar .h{background:repeating-linear-gradient(135deg,var(--healthy) 0 6px,var(--muted) 6px 8px);color:var(--panel)}
+
+.block{margin-top:38px}
+.block > .prose{margin-bottom:14px}
+.sentence{font-family:Literata,Georgia,serif;font-size:1.08rem;line-height:1.7;background:var(--panel);border-left:4px solid var(--post);padding:12px 16px;border-radius:0 8px 8px 0;margin:0 0 16px;max-width:78ch}
+
+/* tree */
+.tree .edge{stroke:var(--muted);stroke-width:1.5;fill:none}
+.tree .node rect{fill:var(--panel);stroke:var(--rule);stroke-width:1.5}
+.tree .node.pos rect{stroke:var(--post);stroke-width:2.5}
+.tree text{font-family:"Atkinson Hyperlegible",system-ui,sans-serif;fill:var(--ink);text-anchor:middle}
+.tree .nl{font-size:15px;font-weight:700}
+.tree .ns{font-size:12.5px;fill:var(--muted)}
+.tree .el{font-size:13px;font-weight:700;text-anchor:middle;paint-order:stroke;stroke:var(--panel);stroke-width:5px}
+.tree .el.prior{fill:var(--prior)} .tree .el.lik{fill:var(--lik)}
+.working{font-size:.95rem;margin-top:12px;overflow-x:auto;white-space:nowrap}
+
+/* sequential */
+.seqbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.chip{font:inherit;font-weight:700;font-size:.95rem;border-radius:999px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);padding:5px 14px;cursor:pointer}
+.chip.neg{border-style:dashed;color:var(--muted);border-color:var(--muted)}
+.corrbox{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;margin:0 0 16px;max-width:620px}
+.corrbox .row{display:flex;align-items:center;gap:10px;font-weight:700}
+.corrbox .ctl{margin-top:10px}
+.tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--rule);border-radius:10px;margin-bottom:16px}
+table{border-collapse:collapse;width:100%;font-size:.93rem;min-width:640px}
+caption{caption-side:top;text-align:left;font-weight:700;padding:12px 14px 4px;font-size:.98rem}
+th,td{padding:7px 12px;text-align:right;border-bottom:1px solid var(--rule)}
+th{color:var(--muted);font-weight:400;font-size:.86rem}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+tr.work td{text-align:left;color:var(--muted);font-size:.87rem;padding-top:0;white-space:nowrap}
+tr.step td{border-bottom:0}
+td.postc{color:var(--post);font-weight:700}
+.chart .axis{stroke:var(--rule)} .chart text{font-size:12px;fill:var(--muted);font-family:"Atkinson Hyperlegible",system-ui,sans-serif}
+.chart .l1{stroke:var(--post);stroke-width:2.5;fill:none} .chart .d1{fill:var(--post)}
+.chart .l2{stroke:var(--evid);stroke-width:2.5;fill:none;stroke-dasharray:6 5} .chart .d2{fill:var(--evid)}
+
+.limits{margin-top:38px;border-top:1px solid var(--rule);padding-top:22px}
+.limits ul{margin:.4rem 0 0;padding-left:1.2rem;max-width:78ch}
+.limits li{margin-bottom:.5rem}
+
+.placeholder{background:var(--panel);border:1px dashed var(--rule);border-radius:12px;padding:28px;max-width:680px;margin-top:18px}
+footer{border-top:1px solid var(--rule);padding:20px 0 34px;font-size:.88rem;color:var(--muted)}
+footer p{max-width:80ch}
+
+@media (prefers-reduced-motion:no-preference){ .posbar .bar div{transition:flex-basis .25s ease} }
+
+@media print{
+  :root,:root:not([data-theme="light"]){
+    --paper:#FFFFFF; --panel:#FFFFFF; --ink:#000000; --muted:#444444; --rule:#999999;
+    --prior:#1F4F8F; --prior-bg:#E6EEF9; --lik:#7A4F0C; --lik-bg:#FBF0DC;
+    --evid:#444444; --evid-bg:#EEEEEE; --post:#8E1F48; --post-bg:#F9E5EC;
+    --sick:#8E1F48; --healthy:#333333; --faint:#AAAAAA;
+  }
+  nav.tabs,.presets,.seqbar button.btn,input[type=range]{display:none!important}
+  body{font-size:12pt}
+  figure,.eqcard,.tablewrap{break-inside:avoid}
+  section.tab{padding-top:10px}
+}
+/* ---------- Tab 2 ---------- */
+h4{font-family:Literata,Georgia,serif;font-size:1.1rem;font-weight:600;margin:0 0 6px;line-height:1.3}
+.studies{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:14px 0 0}
+.studies button{font:inherit;text-align:left;background:var(--panel);color:var(--ink);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.studies button span{font-size:.87rem;color:var(--muted);line-height:1.4}
+.studies button:hover{border-color:var(--muted)}
+.studies button[aria-checked="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.likr{accent-color:var(--lik)} .priorr{accent-color:var(--prior)}
+.readout h4{font-family:"Atkinson Hyperlegible",system-ui,sans-serif;font-size:1rem;font-weight:700;margin:0 0 2px}
+.readout .note{font-size:.84rem;color:var(--muted);margin:10px 0 0;line-height:1.45}
+.readout .pair{display:flex;gap:22px;flex-wrap:wrap;margin-top:4px}
+.readout .pair div{min-width:120px}
+.readout .pair .lbl{font-size:.86rem;color:var(--muted)}
+.readout .pair .v{font-size:1.7rem;font-weight:700;line-height:1.15}
+.v.prior{color:var(--prior)} .v.post{color:var(--post)}
+td.ok{color:var(--ink);font-weight:700}
+td.ok::before{content:"✓ ";color:var(--prior)}
+td.off{font-weight:700}
+.chart.curve .cv{stroke:var(--post);stroke-width:2.5;fill:none}
+.chart.curve .cv2{stroke:var(--evid);stroke-width:2;fill:none;stroke-dasharray:5 5}
+.chart.curve .vl{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 4}
+.chart.curve .m1{fill:var(--panel);stroke:var(--prior);stroke-width:3}
+.chart.curve .m2{fill:var(--post);stroke:var(--panel);stroke-width:2}
+.chart.curve .lab1{fill:var(--prior);font-weight:700}
+.chart.curve .lab2{fill:var(--post);font-weight:700}
+.nbctl{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-start;margin:18px 0 6px}
+fieldset{border:1px solid var(--rule);border-radius:10px;padding:10px 14px 12px;margin:0;background:var(--panel);flex:1 1 520px}
+legend{font-weight:700;padding:0 6px}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px 18px}
+.checks label{display:flex;gap:8px;align-items:flex-start;font-size:.95rem;line-height:1.35}
+.checks input{margin-top:3px}
+.checks small{display:block;color:var(--muted);font-size:.82rem}
+.nbopts{display:flex;flex-direction:column;gap:12px;font-size:.95rem;padding-top:8px}
+.nbopts label{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.steps{display:flex;flex-direction:column;gap:30px;margin-top:20px}
+.stepblk{border-left:3px solid var(--rule);padding-left:18px}
+.ltables{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.lt{background:var(--panel);border:1px solid var(--rule);border-radius:8px;overflow-x:auto}
+.lt table{min-width:0;font-size:.84rem}
+.lt caption{font-size:.9rem;padding:9px 10px 3px}
+.lt th,.lt td{padding:4px 8px}
+.lt td.pm{color:var(--post);font-weight:700}
+.lt td.pb{color:var(--healthy);font-weight:700}
+.lt td.zero{background:var(--post-bg);outline:2px solid var(--post);outline-offset:-2px}
+table.cm{min-width:0;font-size:.95rem}
+table.cm td,table.cm th{text-align:center;padding:10px 12px}
+table.cm td.tp{background:var(--post-bg);color:var(--post);font-weight:700}
+table.cm td.tn{background:var(--prior-bg);color:var(--prior);font-weight:700}
+table.cm td.err{font-weight:700;background:repeating-linear-gradient(135deg,transparent 0 6px,var(--evid-bg) 6px 9px)}
+table.cm th[scope=row]{text-align:left}
+.indep{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;margin-top:14px}
+.indep table{min-width:0;font-size:.9rem;margin-top:8px}
+.indep th,.indep td{padding:5px 8px}
+.indep .btn{margin-top:10px}
+tr.hl td{background:var(--lik-bg)}
+td.bin{font-weight:700}
+.refs{font-size:.88rem;color:var(--muted);max-width:92ch;padding-left:1.3rem;margin:.4rem 0 0}
+.refs li{margin-bottom:.35rem}
+.flip{display:inline-block;font-size:.8rem;font-weight:700;border:1.5px solid var(--post);color:var(--post);border-radius:999px;padding:1px 9px;margin-left:8px}
+/* ---------- Tab 3 ---------- */
+:root{--c0:#2F7A66;--c1:#4F63A3;--c2:#B3402B;--c3:#B07C12;--c4:#7453A3}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--c0:#5CC2A6;--c1:#8FA2E3;--c2:#F07D66;--c3:#E6B452;--c4:#B596E6}}
+:root[data-theme="dark"]{--c0:#5CC2A6;--c1:#8FA2E3;--c2:#F07D66;--c3:#E6B452;--c4:#B596E6}
+.twoup{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,1fr);gap:26px;align-items:start;margin-top:8px}
+@media (max-width:820px){.twoup{grid-template-columns:1fr}}
+.fctl{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;font-size:.95rem;margin:10px 0 12px}
+.fctl label{display:flex;gap:8px;align-items:center}
+.fctl input[type=number]{font:inherit;font-size:.95rem;padding:3px 6px;border:1px solid var(--rule);border-radius:6px;background:var(--panel);color:var(--ink)}
+.modes{display:inline-flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden;background:var(--panel)}
+.modes button{font:inherit;font-size:.93rem;border:0;background:none;color:var(--muted);padding:7px 16px;cursor:pointer}
+.modes button[aria-checked="true"]{background:var(--ink);color:var(--panel);font-weight:700}
+.rates{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 18px;margin:4px 0 14px}
+.rates .ctl label{font-size:.92rem}
+.rates .ctl input[type=range]{margin-top:2px}
+.rates.hidden-vals .ctl input{visibility:hidden}
+.rates .secret{font-size:.86rem;color:var(--muted)}
+.runbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn.primary{background:var(--ink);color:var(--panel);border-color:var(--ink);font-weight:700}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.catdot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.postcard{background:var(--panel);border:1px solid var(--rule);border-radius:14px;padding:16px 18px;margin-top:14px;max-width:520px}
+.postcard[hidden]{display:none}
+.pc-top{font-size:.88rem;color:var(--muted);font-weight:700}
+.pc-text{font-family:Literata,Georgia,serif;font-size:1.2rem;line-height:1.45;margin:8px 0 14px}
+.pc-actions{display:flex;gap:10px;flex-wrap:wrap}
+#fLast h4{margin-bottom:6px}
+#fLast table{min-width:0;font-size:.88rem;margin-top:6px}
+#fLast th,#fLast td{padding:4px 8px}
+#fLast tr.win td{font-weight:700;background:var(--lik-bg)}
+#fTable table td.pmean{color:var(--post);font-weight:700}
+.strip text{font-family:"Atkinson Hyperlegible",system-ui,sans-serif;font-size:11px;font-weight:700;text-anchor:middle}
+/* ---------- Tab 4 ---------- */
+.spamgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,1fr);gap:26px;align-items:start;margin-top:10px}
+@media (max-width:820px){.spamgrid{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{font:inherit;font-size:.93rem;border-radius:999px;border:1.5px dashed var(--muted);background:var(--panel);color:var(--muted);padding:5px 12px;cursor:pointer}
+.chips button[aria-pressed="true"]{border-style:solid;color:var(--ink);font-weight:700}
+.chips button[aria-pressed="true"].spam{border-color:var(--post);background:var(--post-bg)}
+.chips button[aria-pressed="true"].ham{border-color:var(--prior);background:var(--prior-bg)}
+.chips button small{font-weight:400;color:var(--muted);margin-left:4px}
+.chips .poison{border-style:solid;border-color:var(--evid);color:var(--ink);cursor:default}
+.verdict{font-size:1.9rem;font-weight:700;line-height:1.1}
+.verdict.s{color:var(--post)} .verdict.h{color:var(--prior)}
+.tablewrap.wide table{min-width:820px}
+.tablewrap.wide td{text-align:left;vertical-align:top;line-height:1.45}
+.tablewrap.wide th{text-align:left}
+.tablewrap.wide td:first-child{font-weight:700;white-space:nowrap}
+.bars .axis{stroke:var(--rule)} .bars .zero{stroke:var(--ink);stroke-width:1.5}
+.bars .bs{fill:var(--post)} .bars .bh{fill:var(--prior)} .bars .bp{fill:var(--evid)}
+.bars .bt{fill:none;stroke:var(--ink);stroke-width:2}
+td.pass{font-weight:700;color:var(--ink)} td.pass::before{content:"✓ ";color:var(--prior)}
+td.fail{font-weight:700;color:var(--post)} td.fail::before{content:"✗ "}
+#selfTests td{white-space:normal}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <h1>Bayes Lens</h1>
+    <p class="sub">One theorem, three worlds: what a positive medical test, an AI's cancer flag, and your social media feed each reveal once you apply Bayes' rule.</p>
+    <p class="by">Probability and statistics project by Youness</p>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="t-dx" aria-controls="p-dx" aria-selected="true">Diagnosis</button>
+      <button role="tab" id="t-img" aria-controls="p-img" aria-selected="false" tabindex="-1">Imaging AI</button>
+      <button role="tab" id="t-feed" aria-controls="p-feed" aria-selected="false" tabindex="-1">Social feed</button>
+      <button role="tab" id="t-lim" aria-controls="p-lim" aria-selected="false" tabindex="-1">Platforms and limits</button>
+    </nav>
+  </header>
+
+  <!-- ============ TAB 1: DIAGNOSIS ============ -->
+  <section class="tab" id="p-dx" role="tabpanel" aria-labelledby="t-dx">
+    <h2>A positive test is not a diagnosis</h2>
+    <p class="prose">A test's accuracy describes how it behaves when we already know who is sick. A patient needs the reverse: given this result, how likely is it that I am sick? Bayes' rule converts one into the other, and the answer depends heavily on how common the disease was before anyone was tested.</p>
+
+    <div class="eqcard" aria-live="polite">
+      <div class="eqscroll" id="eq"></div>
+      <div class="key">
+        <span><span class="sw" style="background:var(--prior)"></span>Prior: how common the disease is</span>
+        <span><span class="sw" style="background:var(--lik)"></span>Likelihood: how the test behaves</span>
+        <span><span class="sw" style="background:var(--evid)"></span>Evidence: everyone who tests positive</span>
+        <span><span class="sw" style="background:var(--post)"></span>Posterior: what the patient wants to know</span>
+      </div>
+      <p class="muted" style="font-size:.86rem;margin:10px 0 0">D = has the disease, D′ = does not, + = positive test. Figure 1.1: Bayes' rule evaluated with the current settings.</p>
+    </div>
+
+    <div class="lab">
+      <div class="controls">
+        <div>
+          <h3>Scenarios</h3>
+          <div class="presets" id="presets">
+            <button data-p="0.01" data-sens="0.90" data-spec="0.91">Screening mammogram: 1% prevalence, 90% sensitivity, 91% specificity (Gigerenzer's teaching example)</button>
+            <button data-p="0.30" data-sens="0.90" data-spec="0.91">Same test on a patient with symptoms: 30% prevalence (illustrative)</button>
+            <button data-p="0.001" data-sens="0.99" data-spec="0.99">Rare disease, 99% accurate test: 0.1% prevalence (illustrative)</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <label for="pNum">Prevalence P(D)<span><input type="number" id="pNum" min="0.1" max="50" step="0.1"> %</span></label>
+          <span class="hint">Share of people who have the disease before testing. This is the prior.</span>
+          <input type="range" id="pRange" min="0" max="1000" step="1" aria-label="Prevalence (logarithmic scale)">
+        </div>
+        <div class="ctl">
+          <label for="sensNum">Sensitivity P(+ | D)<span><input type="number" id="sensNum" min="1" max="100" step="0.1"> %</span></label>
+          <span class="hint">Share of sick people the test catches.</span>
+          <input type="range" id="sensRange" min="50" max="100" step="0.1" aria-label="Sensitivity">
+        </div>
+        <div class="ctl">
+          <label for="specNum">Specificity P(− | D′)<span><input type="number" id="specNum" min="1" max="100" step="0.1"> %</span></label>
+          <span class="hint">Share of healthy people the test correctly clears. The false positive rate is 1 minus this.</span>
+          <input type="range" id="specRange" min="50" max="100" step="0.1" aria-label="Specificity">
+        </div>
+        <div class="readout">
+          <div class="muted" style="font-size:.9rem">If the test is positive, chance of disease</div>
+          <div class="big" id="ppvBig"></div>
+          <dl id="readDl"></dl>
+        </div>
+      </div>
+
+      <div>
+        <figure>
+          <div class="figtools">
+            <strong>1,000 people take the test</strong>
+            <label><input type="checkbox" id="onlyPos"> Highlight only positive results</label>
+          </div>
+          <svg id="grid" class="g" viewBox="0 0 640 400" role="img" aria-label="Grid of 1,000 people split by disease status and test result"></svg>
+          <div class="legend" id="legend"></div>
+          <div class="posbar" id="posbar"></div>
+          <figcaption id="cap2"></figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="block">
+      <h3>Following the probabilities</h3>
+      <p class="prose">The tree applies the product rule on each path, P(D ∩ +) = P(D) × P(+ | D), then Bayes' rule keeps only the positive leaves: P(D | +) = P(D ∩ +) / P(+).</p>
+      <div class="sentence" id="sentence"></div>
+      <figure>
+        <div class="figtools">
+          <strong>Probability tree</strong>
+          <label>Population
+            <select id="nSel"><option value="1000">1,000</option><option value="10000">10,000</option><option value="100000">100,000</option></select>
+          </label>
+        </div>
+        <svg id="tree" class="tree" viewBox="0 0 780 300" role="img" aria-label="Probability tree"></svg>
+        <div class="working" id="treeWork"></div>
+        <figcaption id="cap3"></figcaption>
+      </figure>
+    </div>
+
+    <div class="block">
+      <h3>Testing again: today's posterior is tomorrow's prior</h3>
+      <p class="prose">After one result, the posterior becomes the prior for the next test. Click a result to flip it between positive and negative. This chain assumes each test is independent given the disease status, which is the same assumption a Naive Bayes classifier makes about its features.</p>
+      <div class="seqbar" id="seqbar"></div>
+      <div class="corrbox">
+        <div class="row"><input type="checkbox" id="corr"><label for="corr">Tests share a cause of error</label></div>
+        <div class="ctl" id="rhoCtl">
+          <label for="rhoNum">Repeat chance ρ<span><input type="number" id="rhoNum" min="0" max="90" step="1"> %</span></label>
+          <span class="hint">Chance that a test just repeats the previous result for a reason unrelated to the disease, such as the same benign lesion or the same lab error. With ρ = 0 the tests are independent.</span>
+          <input type="range" id="rhoRange" min="0" max="90" step="1" aria-label="Repeat chance">
+        </div>
+      </div>
+      <div class="tablewrap" id="seqTable"></div>
+      <div class="tablewrap" id="seqTable2"></div>
+      <figure>
+        <svg id="chart" class="chart" viewBox="0 0 640 240" role="img" aria-label="Posterior probability after each test"></svg>
+        <div class="legend" id="chartLegend"></div>
+        <figcaption id="cap4"></figcaption>
+      </figure>
+    </div>
+
+    <div class="limits">
+      <h3>Limitations this tab exposes</h3>
+      <ul class="prose" style="font-size:1rem">
+        <li><b>The prior dominates.</b> The same test gives very different posteriors in a screening population and in a clinic of symptomatic patients. A single "accuracy" number cannot tell a patient what a positive means.</li>
+        <li><b>Sensitivity and specificity are estimates.</b> They come from a study sample, carry sampling error, and often shift when the test is used on a different population (spectrum bias).</li>
+        <li><b>Repeat tests are rarely independent.</b> Multiplying likelihoods as if they were independent overstates certainty when errors share a cause, as the shared-error setting shows.</li>
+        <li><b>Rounded people.</b> The grid and tree use rounded expected counts; the exact posterior always comes from the formula.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ PLACEHOLDER TABS ============ -->
+  <section class="tab" id="p-img" role="tabpanel" aria-labelledby="t-img" hidden>
+    <h2>When an AI reads the scan</h2>
+    <p class="prose">Imaging AI is sold on sensitivity, specificity and accuracy. Those are likelihoods: they describe the AI when we already know who has cancer. Whether a woman the AI flags actually has cancer is a posterior, and Bayes' rule says it depends on how rare cancer is where the AI is used. Part A checks this against two published mammography AI systems. Part B builds a Bayesian classifier from real imaging data and shows where the prior hides inside a trained model.</p>
+
+    <!-- ================= PART A ================= -->
+    <div class="block">
+      <h3>Part A. Published mammography AI, checked with Bayes' rule</h3>
+      <p class="prose">Pick a study. The app takes the published sensitivity, specificity and cancer prevalence, predicts the recall rate and positive predictive value (PPV) with Bayes' rule, and compares the prediction with what the authors reported.</p>
+      <div class="studies" id="studies" role="radiogroup" aria-label="Study">
+        <button role="radio" data-s="dk"><b>Lunit INSIGHT MMG, Southern Denmark</b><span>Commercial AI on 249,402 screenings from 2014 to 2018. Kühl et al., European Radiology, 2024.</span></button>
+        <button role="radio" data-s="uk"><b>Google mammography AI, five UK NHS services</b><span>Version 1.2 on 115,973 women screened in 2015 and 2016. Kelly et al., Nature Cancer, 2026.</span></button>
+        <button role="radio" data-s="custom"><b>Your own numbers</b><span>Enter any AI's published sensitivity, specificity and prevalence.</span></button>
+      </div>
+
+      <div class="lab">
+        <div class="controls">
+          <div class="readout" id="studyFacts"></div>
+          <div id="customCtl" class="controls">
+            <div class="ctl">
+              <label for="cSensNum">Sensitivity P(flag | C)<span><input type="number" id="cSensNum" min="1" max="100" step="0.1"> %</span></label>
+              <input type="range" id="cSensRange" min="30" max="100" step="0.1" aria-label="Sensitivity" class="likr">
+            </div>
+            <div class="ctl">
+              <label for="cSpecNum">Specificity P(no flag | C′)<span><input type="number" id="cSpecNum" min="1" max="100" step="0.1"> %</span></label>
+              <input type="range" id="cSpecRange" min="80" max="100" step="0.1" aria-label="Specificity" class="likr">
+            </div>
+            <div class="ctl">
+              <label for="cPrevNum">Prevalence P(C)<span><input type="number" id="cPrevNum" min="0.1" max="50" step="0.01"> %</span></label>
+              <input type="range" id="cPrevRange" min="0" max="1000" step="1" aria-label="Prevalence (logarithmic scale)" class="priorr">
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="eqcard" style="margin-top:0">
+            <div class="eqscroll" id="aEq"></div>
+            <p class="muted" style="font-size:.86rem;margin:10px 0 0">C = has breast cancer, C′ = does not, flag = the AI calls the mammogram abnormal. Figure 2.1: Bayes' rule with the study's published values.</p>
+          </div>
+          <div class="tablewrap" id="aCheck"></div>
+          <div class="sentence" id="aSentence" style="margin-bottom:0"></div>
+        </div>
+      </div>
+
+      <figure style="margin-top:22px">
+        <div class="figtools">
+          <strong>Same AI, different populations</strong>
+          <span class="muted" style="font-size:.9rem">Drag to move the AI to a population with a different cancer rate</span>
+        </div>
+        <div class="ctl" style="max-width:520px;margin-bottom:8px">
+          <label for="aPopNum">Cancer prevalence in the new population<span><input type="number" id="aPopNum" min="0.1" max="50" step="0.01"> %</span></label>
+          <input type="range" id="aPopRange" min="0" max="1000" step="1" aria-label="Prevalence of the new population (logarithmic scale)" class="priorr">
+        </div>
+        <svg id="aCurve" class="chart curve" viewBox="0 0 640 280" role="img" aria-label="Positive predictive value against prevalence"></svg>
+        <div class="legend" id="aCurveLegend"></div>
+        <figcaption id="aCap2"></figcaption>
+      </figure>
+    </div>
+
+    <!-- ================= PART B ================= -->
+    <div class="block">
+      <h3>Part B. Train a Naive Bayes classifier on real imaging data</h3>
+      <p class="prose">The Wisconsin Diagnostic Breast Cancer dataset (Street, Wolberg and Mangasarian, 1993; UCI Machine Learning Repository) describes 569 breast masses. Each row holds measurements of cell nuclei computed from a digitized microscope image of a fine-needle aspirate, and a biopsy-confirmed label: 212 malignant, 357 benign. The app splits it into 398 training and 171 test patients (stratified, fixed seed), then trains a Naive Bayes classifier in your browser by counting.</p>
+      <p class="prose">Naive Bayes applies Bayes' rule with many pieces of evidence at once. It assumes the features are independent given the class, so the likelihood of a patient's whole profile is a product: P(features | M) = P(x₁ | M) × P(x₂ | M) × … The same assumption drove the repeat-test chain in the Diagnosis tab.</p>
+
+      <div class="nbctl">
+        <fieldset>
+          <legend>Features the model can see</legend>
+          <div class="checks" id="featChecks"></div>
+        </fieldset>
+        <div class="nbopts">
+          <label>Bins per feature
+            <select id="binSel"><option value="3">3 (low, medium, high)</option><option value="5">5 (quintiles)</option></select>
+          </label>
+          <label><input type="checkbox" id="smooth" checked> Laplace smoothing (add 1 to every count)</label>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="stepblk">
+          <h4>1. The prior, counted from the training data</h4>
+          <div id="bPrior" class="working" style="margin-top:4px"></div>
+        </div>
+        <div class="stepblk">
+          <h4>2. The likelihoods, counted per feature and bin</h4>
+          <p class="muted" style="font-size:.92rem;margin:0 0 10px;max-width:78ch" id="bLikNote"></p>
+          <div class="ltables" id="bLik"></div>
+          <p class="muted" style="font-size:.86rem;margin:8px 0 0">Figure 2.3: likelihood tables learned from the 398 training patients. M = malignant, B = benign. Bin edges are the training-set quantiles.</p>
+        </div>
+        <div class="stepblk">
+          <h4>3. How the trained model does on 171 unseen patients</h4>
+          <div class="lab" style="margin-top:8px">
+            <figure>
+              <div id="bCM"></div>
+              <figcaption id="bCap4"></figcaption>
+            </figure>
+            <div>
+              <div class="readout" id="bMetrics"></div>
+              <div class="indep" id="bIndep"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stepblk">
+          <h4>4. One patient, step by step</h4>
+          <div class="figtools" style="margin-bottom:6px">
+            <label>Test patient <select id="patSel"></select></label>
+            <button class="btn" id="patRand">Show a patient whose diagnosis flips</button>
+          </div>
+          <figure>
+            <div class="tablewrap" style="margin-bottom:10px" id="bPat"></div>
+            <div class="working" id="bPatWork"></div>
+            <figcaption id="bCap5"></figcaption>
+          </figure>
+        </div>
+        <div class="stepblk">
+          <h4>5. The prior hidden inside the model</h4>
+          <p class="prose">This model learned P(M) = 37% because that is the share of malignant masses in the dataset. These patients were already referred for a biopsy of a suspicious mass. Apply the same likelihoods to a population where malignancy is rarer and every posterior moves, even though the model did not change at all.</p>
+          <div class="ctl" style="max-width:520px">
+            <label for="bPopNum">Malignancy rate where the model is used<span><input type="number" id="bPopNum" min="0.1" max="50" step="0.01"> %</span></label>
+            <input type="range" id="bPopRange" min="0" max="1000" step="1" aria-label="Deployment prevalence (logarithmic scale)" class="priorr">
+          </div>
+          <div class="lab" style="margin-top:14px">
+            <div class="readout" id="bShift"></div>
+            <figure>
+              <svg id="bCurve" class="chart curve" viewBox="0 0 640 280" role="img" aria-label="Posterior probability against prior"></svg>
+              <div class="legend" id="bCurveLegend"></div>
+              <figcaption id="bCap6"></figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="limits">
+      <h3>Limitations this tab exposes</h3>
+      <ul class="prose" style="font-size:1rem">
+        <li><b>"Cancer" has to be defined before sensitivity means anything.</b> Google's system scores 54.1% sensitivity when cancers that appear up to 39 months later count, and 91.3% (with 94.1% specificity) when only cancers found at that screening count. Same model, same images.</li>
+        <li><b>A threshold is a choice.</b> The AI outputs a score; someone picks the cut-off that turns it into a flag. The Danish study used a cut-off that matched the first radiologist's sensitivity. A different cut-off gives a different sensitivity and specificity pair.</li>
+        <li><b>A score is not a probability.</b> The UK authors report their model was not perfectly calibrated to produce a disease probability. Only Bayes' rule with the right prior turns the output into one.</li>
+        <li><b>Populations drift.</b> In the UK deployment, a newer mammography machine produced a recall rate of 10.9% against 6.3% on the older model, and the threshold had to be recalibrated. The likelihoods themselves moved.</li>
+        <li><b>Verification bias.</b> In the Danish study, women the AI flagged but radiologists did not recall never got a work-up, so some AI "false positives" may be unconfirmed cancers.</li>
+        <li><b>The Wisconsin data is small and enriched.</b> 569 patients from one institution, cytology rather than mammography, 37% malignant. Binning throws away detail, and the independence assumption is visibly false for radius, perimeter and area.</li>
+      </ul>
+      <h3 style="margin-top:18px">Sources for this tab</h3>
+      <ol class="refs">
+        <li>Kühl J, Elhakim MT, Stougaard SW, et al. Population-wide evaluation of artificial intelligence and radiologist assessment of screening mammograms. European Radiology 34 (2024) 3935–3946. doi:10.1007/s00330-023-10423-7</li>
+        <li>Kelly CJ, Wilson M, Warren LM, et al. Diagnostic accuracy, fairness and clinical implementation of AI for breast cancer screening. Nature Cancer 7 (2026) 494–506. doi:10.1038/s43018-026-01127-0</li>
+        <li>Street WN, Wolberg WH, Mangasarian OL. Nuclear feature extraction for breast tumor diagnosis. IS&amp;T/SPIE Symposium on Electronic Imaging (1993). Dataset: Breast Cancer Wisconsin (Diagnostic), UCI Machine Learning Repository.</li>
+      </ol>
+    </div>
+  </section>
+  <section class="tab" id="p-feed" role="tabpanel" aria-labelledby="t-feed" hidden>
+    <h2>A feed that learns what hooks you</h2>
+    <p class="prose">A feed has one question to answer before every post: which kind of content is this person most likely to engage with? It cannot know, so it keeps a belief for each content type and updates it with Bayes' rule after every swipe. Recommender teams use this family of methods in production: Netflix's engineers have described contextual bandits with Thompson sampling and other Bayesian methods for choosing what to show each member. This tab runs a simplified version on a simulated user, or on you.</p>
+
+    <div class="block" style="margin-top:26px">
+      <h3>How the feed thinks</h3>
+      <div class="twoup">
+        <div class="prose" style="font-size:1rem">
+          <p><b>The belief.</b> For each content type k, the unknown engagement rate is θ<sub>k</sub> = P(engage | type k). Before any data, every value from 0 to 1 is equally plausible: a uniform prior.</p>
+          <p><b>The update.</b> After s engagements in n views, Bayes' rule multiplies that prior by the likelihood θ<sup>s</sup>(1 − θ)<sup>n − s</sup>. The mean of the resulting posterior is <span class="t post">(s + 1) / (n + 2)</span>, known as Laplace's rule of succession. It is the same "add one" idea as Laplace smoothing in the Imaging AI tab.</p>
+          <p><b>The choice.</b> Thompson sampling draws one plausible θ for each type from its posterior and shows the type with the highest draw. A type the feed is unsure about sometimes wins by luck. That is exploration, and it is what lets the feed discover new hooks.</p>
+        </div>
+        <div class="readout" id="fLast"></div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h3>Run the feed</h3>
+      <div class="fctl">
+        <div class="modes" role="radiogroup" aria-label="Who is scrolling">
+          <button role="radio" data-m="sim">Simulated user</button>
+          <button role="radio" data-m="you">You scroll</button>
+        </div>
+        <label id="profWrap">User profile
+          <select id="profSel">
+            <option value="outrage">Drawn to outrage and drama</option>
+            <option value="friends">Mostly here for friends</option>
+            <option value="learner">Curious learner</option>
+            <option value="custom">Custom rates</option>
+          </select>
+        </label>
+        <label>Random seed <input type="number" id="seed" min="1" max="99999" step="1" style="width:84px"></label>
+        <label><input type="checkbox" id="guard"> Guardrail: 1 in 4 posts from a random type</label>
+        <label><input type="checkbox" id="reveal"> Reveal the user's true rates</label>
+      </div>
+      <div class="rates" id="rates"></div>
+
+      <div class="runbar" id="runbar">
+        <button class="btn" data-run="1">Show 1 post</button>
+        <button class="btn" data-run="10">Show 10</button>
+        <button class="btn" data-run="100">Show 100</button>
+        <button class="btn" id="autoBtn">Auto-scroll</button>
+        <button class="btn" id="resetBtn">Start over</button>
+        <span class="muted" id="postCount" aria-live="polite"></span>
+      </div>
+
+      <div class="postcard" id="postCard" hidden>
+        <div class="pc-top"><span class="catdot" id="pcDot"></span><span id="pcCat"></span></div>
+        <p class="pc-text" id="pcText"></p>
+        <div class="pc-actions">
+          <button class="btn primary" id="pcStay">Stay and watch</button>
+          <button class="btn" id="pcSkip">Scroll past</button>
+        </div>
+      </div>
+
+      <figure style="margin-top:16px">
+        <div class="figtools"><strong>The feed so far, most recent on the right</strong><span class="legend" id="stripLegend" style="margin:0"></span></div>
+        <svg id="strip" viewBox="0 0 640 60" role="img" aria-label="Recent posts by content type"></svg>
+        <figcaption id="fCap1"></figcaption>
+      </figure>
+    </div>
+
+    <div class="block">
+      <h3>What the feed believes</h3>
+      <div class="tablewrap" id="fTable"></div>
+      <figure>
+        <svg id="dens" class="chart" viewBox="0 0 640 260" role="img" aria-label="Posterior belief about each content type's engagement rate"></svg>
+        <div class="legend" id="densLegend"></div>
+        <figcaption id="fCap3"></figcaption>
+      </figure>
+    </div>
+
+    <div class="block">
+      <h3>The feed narrows</h3>
+      <div class="lab" style="margin-top:6px">
+        <div class="readout" id="fMetrics"></div>
+        <figure>
+          <svg id="share" class="chart" viewBox="0 0 640 260" role="img" aria-label="Share of each content type in the last 25 posts"></svg>
+          <div class="legend" id="shareLegend"></div>
+          <figcaption id="fCap4"></figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="block">
+      <h3>Why this is the addiction question</h3>
+      <div class="prose">
+        <p>Two learners are running at once. The feed learns which content type pays off for this user and serves more of it. The user learns that scrolling sometimes pays off, but never predictably: even the favourite type hooks only some of the time. Reward that arrives on an unpredictable schedule is the pattern behavioural psychology links to the most persistent habits, and Lindström and colleagues found that posting behaviour on real platforms fits reward-learning models, based on over one million posts from more than 4,000 people.</p>
+        <p>Nothing in the algorithm is malicious. It maximises one number, the probability of engagement, and Bayes' rule makes it very good at that. Whether the user is better off is not in the objective. The guardrail setting shows that a design choice, not the mathematics, decides how narrow the feed becomes.</p>
+      </div>
+    </div>
+
+    <div class="limits">
+      <h3>Limitations this tab exposes</h3>
+      <ul class="prose" style="font-size:1rem">
+        <li><b>Real feeds are far richer.</b> Production systems condition on context such as time of day, device, history and the post itself, and blend many models. Platforms rarely publish their exact method, so this is a model of the idea, not of any specific app.</li>
+        <li><b>Engagement is a proxy.</b> A click or a long view is not enjoyment, and certainly not wellbeing. The feed optimises what it can measure.</li>
+        <li><b>The simulated user never changes.</b> Real preferences drift, and the feed itself shapes them, a feedback loop this model leaves out.</li>
+        <li><b>Each view is treated as an independent coin flip given the content type.</b> Real engagement depends on mood, fatigue and the previous post.</li>
+        <li><b>The prior matters early.</b> With a uniform prior and few views, beliefs are wide and the first lucky engagements steer the feed. This is the cold-start problem.</li>
+        <li><b>No causal claim.</b> The simulation shows how an engagement-maximising Bayesian feed behaves. It does not prove that any real platform causes addiction.</li>
+      </ul>
+      <h3 style="margin-top:18px">Sources for this tab</h3>
+      <ol class="refs">
+        <li>Chandrashekar A, Amat F, Basilico J, Jebara T. Artwork personalization at Netflix. Netflix Technology Blog (2017).</li>
+        <li>Chapelle O, Li L. An empirical evaluation of Thompson sampling. Advances in Neural Information Processing Systems 24 (2011).</li>
+        <li>Lindström B, Bellander M, Schultner DT, Chang A, Tobler PN, Amodio DM. A computational reward learning account of social media engagement. Nature Communications 12, 1311 (2021). doi:10.1038/s41467-020-19607-x</li>
+        <li>Thompson WR. On the likelihood that one unknown probability exceeds another in view of the evidence of two samples. Biometrika 25 (1933) 285–294.</li>
+      </ol>
+    </div>
+  </section>
+  <section class="tab" id="p-lim" role="tabpanel" aria-labelledby="t-lim" hidden>
+    <h2>Where Bayes runs in real AI, and where it breaks</h2>
+    <p class="prose">The first three tabs used Bayes' rule on a test, a scan and a feed. This tab steps back: the classic spam filter your course outline mentions, the deployed systems that rely on Bayesian reasoning today, the limitations that kept reappearing across the project, and how this tool itself was generated by an AI and checked.</p>
+
+    <!-- ============ SPAM ============ -->
+    <div class="block">
+      <h3>The classic application: a Bayesian spam filter</h3>
+      <p class="prose">In 2002 Paul Graham's essay "A Plan for Spam" replaced hand-written spam rules with statistics: count how often each word appears in spam and in normal mail, then combine the words with Bayes' rule. Treating the words as independent makes it a Naive Bayes classifier, the same model as in the Imaging AI tab. Click words to put them in the email.</p>
+      <div class="spamgrid">
+        <div>
+          <div class="chips" id="spamWords" aria-label="Words in the email"></div>
+          <div class="ctl" style="max-width:420px;margin-top:14px">
+            <label for="spPriorNum">Share of all mail that is spam P(S)<span><input type="number" id="spPriorNum" min="1" max="99" step="1"> %</span></label>
+            <span class="hint">Graham's formula quietly assumes 50%. Change it and watch the verdict move.</span>
+            <input type="range" id="spPriorRange" min="1" max="99" step="1" class="priorr" aria-label="Prior probability of spam">
+          </div>
+          <button class="btn" id="poisonBtn" style="margin-top:12px">Attacker adds 5 innocent words</button>
+          <p class="muted" style="font-size:.84rem;margin:10px 0 0;max-width:60ch">Word probabilities here are illustrative, chosen to look like typical values. A real filter estimates each one by counting words in thousands of labelled emails.</p>
+        </div>
+        <div class="readout" id="spamOut"></div>
+      </div>
+      <figure style="margin-top:16px">
+        <svg id="spamBars" class="chart" viewBox="0 0 640 260" role="img" aria-label="Evidence each word contributes"></svg>
+        <figcaption id="spamCap"></figcaption>
+      </figure>
+    </div>
+
+    <!-- ============ PLATFORMS ============ -->
+    <div class="block">
+      <h3>Where Bayes runs in deployed AI</h3>
+      <p class="prose">Some systems are Bayesian inside; others are deep networks whose outputs only become meaningful through Bayes' rule. The table separates what each platform has publicly described from how Bayes enters.</p>
+      <div class="tablewrap wide">
+        <table>
+          <caption>Table 4.1. Bayesian reasoning in real AI platforms</caption>
+          <thead><tr><th>Area</th><th>Platform and public evidence</th><th>Where Bayes enters</th><th>Main limitation</th></tr></thead>
+          <tbody>
+            <tr><td>Email spam</td><td>Graham's 2002 essay launched Naive Bayes filters such as SpamBayes, POPFile and Bogofilter. Gmail now layers several machine-learning models with rules; in 2019 Google reported that new TensorFlow models blocked about 100 million extra spam messages a day.</td><td>Word likelihoods combined into P(spam | words), as in the demo above.</td><td>Spammers adapt. Poisoning attacks insert innocent words to drag the posterior down.</td></tr>
+            <tr><td>Search advertising</td><td>Microsoft's AdPredictor (Graepel et al., ICML 2010) predicted click-through rates for Bing sponsored search and, per the paper, was serving all of that traffic.</td><td>Keeps a Gaussian belief over every model weight and updates it with Bayes' rule after each impression.</td><td>The model decides which ads are shown, so it shapes its own future training data.</td></tr>
+            <tr><td>Recommendations</td><td>Netflix described choosing artwork per member with contextual bandits, including Thompson sampling (2017). Chapelle and Li (2011) evaluated Thompson sampling on Yahoo news and advertising data.</td><td>Posterior belief about engagement per item; sampling from it balances exploring and exploiting (Social feed tab).</td><td>Optimises measurable engagement, not wellbeing. Platforms rarely disclose details.</td></tr>
+            <tr><td>Game matchmaking</td><td>TrueSkill (Herbrich, Minka and Graepel, 2007), Microsoft's rating system for Xbox Live.</td><td>Each player's skill is a belief distribution, updated after every match.</td><td>Assumes skill changes slowly and performance varies randomly around it.</td></tr>
+            <tr><td>Medical imaging</td><td>Lunit INSIGHT MMG and Google's mammography AI (Imaging AI tab).</td><td>The networks are not Bayesian, but turning a flag into a probability of cancer requires Bayes' rule with the local prevalence.</td><td>Scores are not calibrated probabilities; thresholds and populations drift.</td></tr>
+            <tr><td>Clinical trials</td><td>The US FDA issued guidance on Bayesian statistics for medical-device trials in 2010 and a draft guidance for drugs and biologics in January 2026.</td><td>Prior information from earlier studies is combined with trial data; success is judged by a posterior probability.</td><td>The prior must be justified. Borrowing from unlike studies can mislead.</td></tr>
+            <tr><td>Machine-learning libraries</td><td>scikit-learn ships a family of Naive Bayes classifiers. The Imaging AI model matches its CategoricalNB to 15 decimal places (checks below).</td><td>Priors and likelihoods counted from data, exactly as in Part B of the Imaging AI tab.</td><td>The independence assumption, which the tool showed failing for correlated features.</td></tr>
+            <tr><td>Large language models</td><td>Claude (Anthropic), the model that generated this app's code.</td><td>Not built as a Bayesian model: it outputs next-word probabilities from a neural network. One research line (Xie et al., ICLR 2022) explains its learning from examples in a prompt as implicit Bayesian inference.</td><td>It can state false facts or cite nonexistent sources with confidence, which is why everything below was checked.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ LIMITS MATRIX ============ -->
+    <div class="block">
+      <h3>Limitations that kept coming back</h3>
+      <div class="tablewrap wide">
+        <table>
+          <caption>Table 4.2. Limitations of Bayes' rule in AI, as they appeared in this tool</caption>
+          <thead><tr><th>Limitation</th><th>Where it appeared</th><th>Why Bayes' rule alone cannot fix it</th><th>What practitioners do</th></tr></thead>
+          <tbody>
+            <tr><td>Results hinge on the prior</td><td>Diagnosis presets; Imaging AI step 5 (98% becomes 45%); spam slider</td><td>The theorem is exact, but it is only as good as the base rate fed into it.</td><td>Report predictive values per population; set the prior from local data.</td></tr>
+            <tr><td>Likelihoods are estimates</td><td>Google AI sensitivity: 54.1% or 91.3% depending on what counts as cancer</td><td>Sensitivity and specificity carry sampling error and depend on definitions and case mix.</td><td>Confidence intervals, external validation, clear ground-truth definitions.</td></tr>
+            <tr><td>Evidence treated as independent</td><td>Shared-error repeat tests; radius, perimeter and area; spam words</td><td>Multiplying correlated likelihoods counts the same evidence twice, producing overconfidence.</td><td>Remove redundant features; model dependence (Bayesian networks); recalibrate.</td></tr>
+            <tr><td>Sparse data</td><td>Empty bins give 0% or 100% posteriors; cold start in the feed</td><td>A zero count makes a zero likelihood that no other evidence can outweigh.</td><td>Smoothing, which is itself a prior; collect more data.</td></tr>
+            <tr><td>Scores are not probabilities</td><td>Imaging AI flags; the UK paper's calibration note</td><td>A network score must be mapped to a probability before Bayes' rule applies.</td><td>Calibration on local data; monitoring after deployment.</td></tr>
+            <tr><td>The world shifts</td><td>New mammography machine nearly doubled the AI recall rate</td><td>Likelihoods learned last year may not hold this year.</td><td>Drift monitoring; recalibrating thresholds; retraining.</td></tr>
+            <tr><td>The objective can be wrong</td><td>Feed narrows to Outrage while engagement rises</td><td>Bayes' rule optimises beliefs, not values. It serves whatever goal it is given.</td><td>Guardrails, diversity rules, wellbeing metrics, regulation.</td></tr>
+            <tr><td>Adversaries</td><td>Spam poisoning</td><td>Attackers can craft evidence that the likelihoods misread.</td><td>Frequent retraining; combining many signals; human review.</td></tr>
+            <tr><td>Feedback loops</td><td>The feed; ad prediction</td><td>The system's choices determine which data it sees next.</td><td>Deliberate exploration; offline evaluation; logging random samples.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ DISCLOSURE ============ -->
+    <div class="block">
+      <h3>How this tool was built with AI, and how it was checked</h3>
+      <div class="prose">
+        <p>The code for this app was generated by Claude Opus 5.5 (Anthropic) in a step-by-step conversation on claude.ai. Each tab was specified, generated, tested and approved before the next one was started. Published numbers were first looked up in the original papers, not taken from the AI's memory.</p>
+        <p>An AI code generator fails in predictable ways: it can produce plausible but wrong numbers, cite sources that do not exist, and write code that runs but computes the wrong thing. The checks below target each of those. They run live in your browser against values computed separately in Python with NumPy and scikit-learn.</p>
+      </div>
+      <div class="tablewrap wide" id="selfTests"></div>
+      <button class="btn" id="rerunTests">Run the checks again</button>
+      <div class="prose" style="margin-top:16px;font-size:1rem">
+        <p><b>Problems caught during testing:</b> a quote-escaping error that would have stopped the whole Imaging AI tab from loading, a singular or plural wording bug ("1 are sick"), and a note that became wrong after a new metric was added. Each was found by running the page headlessly and reading its output, not by trusting the generated code.</p>
+        <p><b>What the checks cannot prove:</b> that the chosen models are the right ones for a real hospital or platform, or that the illustrative spam probabilities match any real corpus. Those are judgement calls, discussed in the limitations above.</p>
+      </div>
+    </div>
+
+    <div class="limits">
+      <h3>Sources for this tab</h3>
+      <ol class="refs">
+        <li>Graham P. A Plan for Spam (2002). paulgraham.com/spam.html</li>
+        <li>Kumaran N. Spam does not bring us joy: ridding Gmail of 100 million more spam messages with TensorFlow. Google Workspace blog (6 February 2019).</li>
+        <li>Graepel T, Quiñonero Candela J, Borchert T, Herbrich R. Web-scale Bayesian click-through rate prediction for sponsored search advertising in Microsoft's Bing search engine. ICML (2010) 13–20.</li>
+        <li>Herbrich R, Minka T, Graepel T. TrueSkill: a Bayesian skill rating system. Advances in Neural Information Processing Systems (MIT Press, 2007).</li>
+        <li>US Food and Drug Administration. Use of Bayesian Methodology in Clinical Trials of Drug and Biological Products, draft guidance (January 2026); Guidance for the Use of Bayesian Statistics in Medical Device Clinical Trials (2010).</li>
+        <li>Xie SM, Raghunathan A, Liang P, Ma T. An explanation of in-context learning as implicit Bayesian inference. ICLR (2022).</li>
+        <li>Pedregosa F, et al. Scikit-learn: machine learning in Python. Journal of Machine Learning Research 12 (2011) 2825–2830.</li>
+        <li>Sources for the Netflix, Chapelle and Li, Lunit and Google studies are listed on the Imaging AI and Social feed tabs.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    <p>Code generated with Claude (Anthropic) and checked against hand calculations. Every number on this page is computed live from Bayes' rule; nothing is hard-coded except the scenario presets.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var S={p:0.01,sens:0.90,spec:0.91,N:1000,onlyPos:false,results:["+","+"],corr:false,rho:0.4};
+var LMIN=Math.log10(0.001), LMAX=Math.log10(0.5);
+function tToP(t){return Math.pow(10,LMIN+t/1000*(LMAX-LMIN));}
+function pToT(p){return Math.round((Math.log10(p)-LMIN)/(LMAX-LMIN)*1000);}
+function $(id){return document.getElementById(id);}
+function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
+function sig(x,n){n=n||3; if(!isFinite(x))return "–"; if(x===0)return "0"; return String(Number(x.toPrecision(n)));}
+function pct(x){var v=x*100,d=v>=1?1:(v>=0.1?2:3);var s=v.toFixed(d);if(s.indexOf(".")>=0)s=s.replace(/0+$/,"").replace(/\.$/,"");return s+"%";}
+function int(n){return n.toLocaleString("en-US");}
+function post(p,lD,lH){var a=lD*p,b=lH*(1-p);return (a+b)===0?NaN:a/(a+b);}
+
+/* ---------- counts ---------- */
+function counts(N){
+  var sick=Math.round(N*S.p), healthy=N-sick;
+  var TP=Math.round(sick*S.sens), FN=sick-TP;
+  var FP=Math.round(healthy*(1-S.spec)), TN=healthy-FP;
+  return {N:N,sick:sick,healthy:healthy,TP:TP,FN:FN,FP:FP,TN:TN};
+}
+
+/* ---------- equation ---------- */
+function renderEq(){
+  var p=S.p,se=S.sens,fpr=1-S.spec;
+  var num=se*p, fp=fpr*(1-p), den=num+fp, r=num/den;
+  $("eq").innerHTML=
+   '<div class="eqrow"><span class="t post">P(D | +)</span><span class="op">=</span>'+
+   '<span class="frac"><span class="num"><span class="t lik">P(+ | D)</span> × <span class="t prior">P(D)</span></span>'+
+   '<span class="den evidence"><span class="t lik">P(+ | D)</span> × <span class="t prior">P(D)</span> + <span class="t lik">P(+ | D′)</span> × <span class="t prior">P(D′)</span></span></span></div>'+
+   '<div class="eqrow"><span class="op">=</span>'+
+   '<span class="frac"><span class="num"><span class="t lik">'+sig(se)+'</span> × <span class="t prior">'+sig(p)+'</span></span>'+
+   '<span class="den evidence"><span class="t lik">'+sig(se)+'</span> × <span class="t prior">'+sig(p)+'</span> + <span class="t lik">'+sig(fpr)+'</span> × <span class="t prior">'+sig(1-p)+'</span></span></span>'+
+   '<span class="op">=</span><span class="frac"><span class="num">'+sig(num)+'</span><span class="den evidence">'+sig(num)+' + '+sig(fp)+' = <span class="t evid">'+sig(den)+'</span></span></span>'+
+   '<span class="op">=</span><span class="result">'+pct(r)+'</span></div>';
+}
+
+/* ---------- readout ---------- */
+function renderReadout(){
+  var p=S.p,se=S.sens,sp=S.spec;
+  var ppv=post(p,se,1-sp);
+  var npv=sp*(1-p)/(sp*(1-p)+(1-se)*p);
+  var pos=se*p+(1-sp)*(1-p);
+  $("ppvBig").textContent=pct(ppv);
+  $("readDl").innerHTML=
+   '<dt>Positive tests that are false alarms</dt><dd>'+pct(1-ppv)+'</dd>'+
+   '<dt>If negative, chance of disease P(D | −)</dt><dd>'+pct(1-npv)+'</dd>'+
+   '<dt>Everyone who tests positive P(+)</dt><dd>'+pct(pos)+'</dd>';
+}
+
+/* ---------- grid ---------- */
+function shape(g,x,y){
+  if(g==="TP")return '<rect class="tp" x="'+(x-5)+'" y="'+(y-5)+'" width="10" height="10" rx="1"/>';
+  if(g==="FN")return '<rect class="fn" x="'+(x-4.5)+'" y="'+(y-4.5)+'" width="9" height="9" rx="1"/>';
+  if(g==="FP")return '<circle class="fp" cx="'+x+'" cy="'+y+'" r="5"/>';
+  return '<circle class="tn" cx="'+x+'" cy="'+y+'" r="4.3"/>';
+}
+function renderGrid(){
+  var c=counts(1000), cols=40, cell=16, i=0, out="";
+  [["TP",c.TP],["FN",c.FN],["FP",c.FP],["TN",c.TN]].forEach(function(g){
+    for(var k=0;k<g[1];k++,i++){out+=shape(g[0],(i%cols)*cell+8,Math.floor(i/cols)*cell+8);}
+  });
+  var svg=$("grid"); svg.innerHTML=out; svg.classList.toggle("onlypos",S.onlyPos);
+  function ic(g){return '<svg viewBox="-7 -7 14 14" class="g" aria-hidden="true">'+shape(g,0,0)+'</svg>';}
+  $("legend").innerHTML=
+   '<span>'+ic("TP")+'Sick, tested positive: <b>'+c.TP+'</b></span>'+
+   '<span>'+ic("FN")+'Sick, missed: <b>'+c.FN+'</b></span>'+
+   '<span>'+ic("FP")+'Healthy, false alarm: <b>'+c.FP+'</b></span>'+
+   '<span>'+ic("TN")+'Healthy, cleared: <b>'+c.TN+'</b></span>';
+  var tot=c.TP+c.FP;
+  $("posbar").innerHTML=tot===0?'<div class="lbl">Nobody tests positive at these settings.</div>':
+   '<div class="lbl">Of the <b>'+tot+'</b> '+(tot===1?'person':'people')+' who tested positive, <b>'+c.TP+'</b> '+(c.TP===1?'is':'are')+' sick ('+pct(c.TP/tot)+' from the rounded counts)</div>'+
+   '<div class="bar"><div class="s" style="flex-basis:'+(c.TP/tot*100)+'%">'+(c.TP/tot>0.08?c.TP+' sick':'')+'</div>'+
+   '<div class="h" style="flex-basis:'+(c.FP/tot*100)+'%">'+(c.FP/tot>0.08?c.FP+' healthy':'')+'</div></div>';
+  $("cap2").innerHTML='<b>Figure 1.2.</b> 1,000 people at prevalence '+pct(S.p)+', sensitivity '+pct(S.sens)+', specificity '+pct(S.spec)+
+   '. Squares are sick, circles are healthy; filled shapes tested positive. Counts are rounded expected values.';
+}
+
+/* ---------- tree ---------- */
+function renderTree(){
+  var c=counts(S.N), p=S.p, se=S.sens, sp=S.spec;
+  function node(x,y,w,l,s,cls){return '<g class="node '+(cls||"")+'"><rect x="'+x+'" y="'+(y-25)+'" width="'+w+'" height="50" rx="8"/>'+
+    '<text class="nl" x="'+(x+w/2)+'" y="'+(y-4)+'">'+l+'</text><text class="ns" x="'+(x+w/2)+'" y="'+(y+15)+'">'+s+'</text></g>';}
+  function edge(x1,y1,x2,y2,lab,cls,dy){return '<line class="edge" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>'+
+    '<text class="el '+cls+'" x="'+((x1+x2)/2)+'" y="'+((y1+y2)/2+dy)+'">'+lab+'</text>';}
+  var o="";
+  o+=edge(140,150,285,75,"P(D) = "+sig(p),"prior",-8);
+  o+=edge(140,150,285,225,"P(D′) = "+sig(1-p),"prior",20);
+  o+=edge(435,75,590,35,"P(+ | D) = "+sig(se),"lik",-8);
+  o+=edge(435,75,590,115,"P(− | D) = "+sig(1-se),"lik",18);
+  o+=edge(435,225,590,185,"P(+ | D′) = "+sig(1-sp),"lik",-8);
+  o+=edge(435,225,590,265,"P(− | D′) = "+sig(sp),"lik",18);
+  o+=node(10,150,130,int(c.N)+" people","everyone tested");
+  o+=node(285,75,150,"Sick: "+int(c.sick),"has disease D");
+  o+=node(285,225,150,"Healthy: "+int(c.healthy),"no disease D′");
+  o+=node(590,35,185,"True positive: "+int(c.TP),"P(D ∩ +) = "+sig(p*se),"pos");
+  o+=node(590,115,185,"Missed: "+int(c.FN),"P(D ∩ −) = "+sig(p*(1-se)));
+  o+=node(590,185,185,"False alarm: "+int(c.FP),"P(D′ ∩ +) = "+sig((1-p)*(1-sp)),"pos");
+  o+=node(590,265,185,"Cleared: "+int(c.TN),"P(D′ ∩ −) = "+sig((1-p)*sp));
+  $("tree").innerHTML=o;
+  var a=p*se,b=(1-p)*(1-sp);
+  $("treeWork").innerHTML='<span class="t post">P(D | +)</span> = P(D ∩ +) / P(+) = '+sig(a)+' / ('+sig(a)+' + '+sig(b)+') = '+sig(a)+' / '+sig(a+b)+' = <b style="color:var(--post)">'+pct(a/(a+b))+'</b>';
+  var tot=c.TP+c.FP;
+  $("sentence").innerHTML='Out of '+int(c.N)+' people, '+int(c.sick)+' have the disease. The test catches '+int(c.TP)+' of them. Of the '+int(c.healthy)+
+    ' healthy people, '+int(c.FP)+' also test positive. So of the '+int(tot)+' positive results, only '+int(c.TP)+' belong to sick people'+
+    (tot?': about '+pct(c.TP/tot)+'.':'.');
+  $("cap3").innerHTML='<b>Figure 1.3.</b> Probability tree for '+int(c.N)+' people. Blue branches carry the prior, amber branches the likelihoods; outlined leaves are the positive results that make up P(+).';
+}
+
+/* ---------- sequential ---------- */
+function lik(r,state){ /* independent likelihood */
+  if(state==="D")return r==="+"?S.sens:1-S.sens;
+  return r==="+"?1-S.spec:S.spec;
+}
+function likC(r,prev,state){ /* shared-error model */
+  var base=lik(r,state); if(prev===null)return base;
+  return S.rho*(r===prev?1:0)+(1-S.rho)*base;
+}
+function chain(useCorr){
+  var p=S.p, rows=[];
+  S.results.forEach(function(r,k){
+    var prev=k>0?S.results[k-1]:null;
+    var lD=useCorr?likC(r,prev,"D"):lik(r,"D");
+    var lH=useCorr?likC(r,prev,"H"):lik(r,"H");
+    var q=post(p,lD,lH);
+    rows.push({k:k+1,r:r,prior:p,lD:lD,lH:lH,post:q,prev:prev}); p=q;
+  });
+  return rows;
+}
+function tableHTML(rows,title,useCorr){
+  var h='<table><caption>'+title+'</caption><thead><tr><th>Test</th><th>Result</th><th>Prior</th><th>P(result | D)</th><th>P(result | D′)</th><th>Posterior P(D | results so far)</th></tr></thead><tbody>';
+  rows.forEach(function(w){
+    h+='<tr class="step"><td>'+w.k+'</td><td>'+(w.r==="+"?"Positive":"Negative")+'</td><td>'+sig(w.prior,4)+'</td><td>'+sig(w.lD,4)+'</td><td>'+sig(w.lH,4)+'</td><td class="postc">'+pct(w.post)+'</td></tr>';
+    var work='('+sig(w.lD,4)+' × '+sig(w.prior,4)+') / ('+sig(w.lD,4)+' × '+sig(w.prior,4)+' + '+sig(w.lH,4)+' × '+sig(1-w.prior,4)+') = '+sig(w.lD*w.prior,4)+' / '+sig(w.lD*w.prior+w.lH*(1-w.prior),4)+' = '+sig(w.post,4);
+    if(useCorr&&w.prev!==null){
+      var same=w.r===w.prev?"1":"0";
+      work='Likelihoods: ρ × '+same+' + (1 − ρ) × independent value, with ρ = '+sig(S.rho)+'. Then '+work;
+    }
+    h+='<tr class="work"><td colspan="6">'+work+'</td></tr>';
+  });
+  return h+'</tbody></table>';
+}
+function renderSeq(){
+  var bar="";
+  S.results.forEach(function(r,i){
+    bar+='<button class="chip'+(r==="−"?" neg":"")+'" data-i="'+i+'" aria-label="Test '+(i+1)+' result '+(r==="+"?"positive":"negative")+', click to flip">Test '+(i+1)+': '+(r==="+"?"+":"−")+'</button>';
+  });
+  bar+='<button class="btn" id="addT"'+(S.results.length>=6?" disabled":"")+'>Add a test</button>';
+  bar+='<button class="btn" id="remT"'+(S.results.length<=1?" disabled":"")+'>Remove last test</button>';
+  $("seqbar").innerHTML=bar;
+  var r1=chain(false);
+  $("seqTable").innerHTML=tableHTML(r1,"Independent tests (standard assumption)",false);
+  var r2=null;
+  if(S.corr){ r2=chain(true); $("seqTable2").style.display=""; $("seqTable2").innerHTML=tableHTML(r2,"Tests that share a cause of error (ρ = "+pct(S.rho)+")",true); }
+  else { $("seqTable2").style.display="none"; $("seqTable2").innerHTML=""; }
+  $("rhoCtl").style.opacity=S.corr?1:.45;
+  $("rhoNum").disabled=$("rhoRange").disabled=!S.corr;
+  renderChart(r1,r2);
+}
+function renderChart(r1,r2){
+  var W=640,H=240,L=48,R=20,T=16,B=36, n=S.results.length;
+  function X(k){return L+k*(W-L-R)/Math.max(n,1);}
+  function Y(v){return T+(1-v)*(H-T-B);}
+  var o="";
+  [0,.25,.5,.75,1].forEach(function(v){o+='<line class="axis" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text x="'+(L-8)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+(v*100)+'%</text>';});
+  for(var k=0;k<=n;k++){o+='<text x="'+X(k)+'" y="'+(H-12)+'" text-anchor="middle">'+(k===0?"Before":"Test "+k)+'</text>';}
+  function line(rows,lc,dc){
+    var pts=[[X(0),Y(S.p)]].concat(rows.map(function(w){return [X(w.k),Y(w.post)];}));
+    var s='<polyline class="'+lc+'" points="'+pts.map(function(q){return q.join(",");}).join(" ")+'"/>';
+    pts.forEach(function(q){s+='<circle class="'+dc+'" cx="'+q[0]+'" cy="'+q[1]+'" r="4"/>';});
+    return s;
+  }
+  o+=line(r1,"l1","d1"); if(r2)o+=line(r2,"l2","d2");
+  $("chart").innerHTML=o;
+  $("chartLegend").innerHTML='<span><svg viewBox="0 0 14 14"><line x1="0" y1="7" x2="14" y2="7" stroke="var(--post)" stroke-width="3"/></svg>Independent: final '+pct(r1[r1.length-1].post)+'</span>'+
+    (r2?'<span><svg viewBox="0 0 14 14"><line x1="0" y1="7" x2="14" y2="7" stroke="var(--evid)" stroke-width="3" stroke-dasharray="4 3"/></svg>Shared error: final '+pct(r2[r2.length-1].post)+'</span>':'');
+  $("cap4").innerHTML='<b>Figure 1.4.</b> Posterior probability of disease after each result, starting from prevalence '+pct(S.p)+
+    '. Results: '+S.results.map(function(r){return r==="+"?"positive":"negative";}).join(", ")+'.'+(r2?' The dashed line uses the shared-error model with ρ = '+pct(S.rho)+'.':'');
+}
+
+/* ---------- sync + render ---------- */
+function syncInputs(){
+  $("pRange").value=pToT(clamp(S.p,0.001,0.5)); $("pNum").value=+(S.p*100).toFixed(2);
+  $("sensRange").value=S.sens*100; $("sensNum").value=+(S.sens*100).toFixed(1);
+  $("specRange").value=S.spec*100; $("specNum").value=+(S.spec*100).toFixed(1);
+  $("rhoRange").value=S.rho*100; $("rhoNum").value=Math.round(S.rho*100);
+  $("nSel").value=String(S.N); $("onlyPos").checked=S.onlyPos; $("corr").checked=S.corr;
+  document.querySelectorAll("#presets button").forEach(function(b){
+    var on=Math.abs(+b.dataset.p-S.p)<1e-9&&Math.abs(+b.dataset.sens-S.sens)<1e-9&&Math.abs(+b.dataset.spec-S.spec)<1e-9;
+    b.setAttribute("aria-pressed",on?"true":"false");
+  });
+}
+function renderAll(){renderEq();renderReadout();renderGrid();renderTree();renderSeq();syncInputs();}
+
+/* ---------- events ---------- */
+$("pRange").addEventListener("input",function(){S.p=+tToP(+this.value).toPrecision(3);renderAll();});
+$("pNum").addEventListener("change",function(){S.p=clamp(+this.value||1,0.1,50)/100;renderAll();});
+$("sensRange").addEventListener("input",function(){S.sens=+this.value/100;renderAll();});
+$("sensNum").addEventListener("change",function(){S.sens=clamp(+this.value||90,1,100)/100;renderAll();});
+$("specRange").addEventListener("input",function(){S.spec=+this.value/100;renderAll();});
+$("specNum").addEventListener("change",function(){S.spec=clamp(+this.value||90,1,100)/100;renderAll();});
+$("rhoRange").addEventListener("input",function(){S.rho=+this.value/100;renderAll();});
+$("rhoNum").addEventListener("change",function(){S.rho=clamp(+this.value||0,0,90)/100;renderAll();});
+$("onlyPos").addEventListener("change",function(){S.onlyPos=this.checked;renderGrid();});
+$("corr").addEventListener("change",function(){S.corr=this.checked;renderAll();});
+$("nSel").addEventListener("change",function(){S.N=+this.value;renderTree();});
+$("presets").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b)return;
+  S.p=+b.dataset.p; S.sens=+b.dataset.sens; S.spec=+b.dataset.spec; renderAll();
+});
+$("seqbar").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b)return;
+  if(b.id==="addT"){S.results.push("+");}
+  else if(b.id==="remT"){S.results.pop();}
+  else { var i=+b.dataset.i; S.results[i]=S.results[i]==="+"?"−":"+"; }
+  renderAll();
+  var again=b.id?$(b.id):document.querySelector('.chip[data-i="'+b.dataset.i+'"]'); if(again&&!again.disabled)again.focus();
+});
+
+/* ---------- tabs ---------- */
+var tabs=[].slice.call(document.querySelectorAll('[role="tab"]'));
+function selectTab(t){
+  tabs.forEach(function(x){var on=x===t;x.setAttribute("aria-selected",on);x.tabIndex=on?0:-1;$(x.getAttribute("aria-controls")).hidden=!on;});
+}
+tabs.forEach(function(t,i){
+  t.addEventListener("click",function(){selectTab(t);});
+  t.addEventListener("keydown",function(e){
+    var j=e.key==="ArrowRight"?(i+1)%tabs.length:e.key==="ArrowLeft"?(i-1+tabs.length)%tabs.length:-1;
+    if(j>=0){e.preventDefault();selectTab(tabs[j]);tabs[j].focus();}
+  });
+});
+
+renderAll();
+})();
+</script>
+<script>
+(function(){
+"use strict";
+var D={"X":[[0.2654,25.38,184.6,2019.0,10.38,0.1622,0.4601],[0.186,24.99,158.8,1956.0,17.77,0.1238,0.275],[0.243,23.57,152.5,1709.0,21.25,0.1444,0.3613],[0.2575,14.91,98.87,567.7,20.38,0.2098,0.6638],[0.1625,22.54,152.2,1575.0,14.34,0.1374,0.2364],[0.1741,15.47,103.4,741.6,15.7,0.1791,0.3985],[0.1932,22.88,153.2,1606.0,19.98,0.1442,0.3063],[0.1556,17.06,110.6,897.0,20.83,0.1654,0.3196],[0.206,15.49,106.2,739.3,21.82,0.1703,0.4378],[0.221,15.09,97.65,711.4,24.04,0.1853,0.4366],[0.0998,19.19,123.8,1150.0,23.24,0.1181,0.2948],[0.181,20.42,136.5,1299.0,17.89,0.1396,0.3792],[0.1767,20.96,151.7,1332.0,24.8,0.1037,0.3176],[0.1119,16.84,112.0,876.5,23.95,0.1131,0.2809],[0.2208,15.03,108.8,697.7,22.61,0.1651,0.3596],[0.1712,17.46,124.1,943.2,27.54,0.1678,0.4218],[0.1609,19.07,123.4,1138.0,20.13,0.1464,0.3029],[0.2073,20.96,136.8,1315.0,20.68,0.1789,0.3706],[0.2388,27.32,186.8,2398.0,22.15,0.1512,0.2768],[0.1288,15.11,99.7,711.2,14.36,0.144,0.2977],[0.0728,14.5,96.09,630.5,15.71,0.1312,0.3184],[0.0623,10.23,65.13,314.9,12.44,0.1324,0.245],[0.2393,18.07,125.1,980.9,14.26,0.139,0.4667],[0.2009,29.17,188.0,2615.0,23.04,0.1401,0.2822],[0.2095,26.46,177.0,2215.0,21.38,0.1805,0.3613],[0.255,22.25,152.4,1461.0,16.4,0.1545,0.4066],[0.2701,17.62,122.4,896.9,21.53,0.1525,0.4264],[0.149,21.31,139.9,1403.0,20.25,0.1338,0.2341],[0.2024,20.27,149.3,1269.0,25.27,0.1641,0.4027],[0.1456,20.01,134.9,1227.0,15.05,0.1255,0.2756],[0.1848,23.15,160.5,1670.0,25.11,0.1491,0.3444],[0.1546,16.82,119.4,888.7,18.7,0.1637,0.4761],[0.1847,20.88,136.1,1344.0,23.98,0.1634,0.353],[0.1785,24.15,161.4,1813.0,26.47,0.1509,0.3672],[0.1864,20.21,132.7,1261.0,17.88,0.1446,0.427],[0.1813,20.01,133.5,1229.0,21.59,0.1563,0.4863],[0.1447,15.89,116.2,799.6,21.72,0.1446,0.3591],[0.0501,13.3,84.46,545.9,18.42,0.097,0.1987],[0.029,14.99,95.54,698.8,25.2,0.0939,0.1565],[0.2258,15.53,107.3,740.4,20.82,0.161,0.2807],[0.1112,15.93,102.5,787.9,21.58,0.1094,0.2994],[0.1424,12.84,87.22,514.0,21.35,0.1909,0.2964],[0.2493,24.09,177.4,1651.0,24.81,0.1247,0.467],[0.1492,17.38,113.1,907.2,20.28,0.153,0.3739],[0.1607,16.23,105.5,740.7,21.81,0.1503,0.3693],[0.2378,22.82,150.6,1567.0,17.6,0.1679,0.3799],[0.0256,8.964,57.26,242.2,16.84,0.1297,0.3105],[0.2088,15.67,102.8,759.4,18.66,0.1786,0.39],[0.0655,13.76,89.88,582.6,14.63,0.1494,0.2747],[0.1282,15.15,99.0,698.8,22.3,0.1162,0.2871],[0.0372,12.98,82.98,516.5,21.6,0.1085,0.2433],[0.0859,14.67,96.08,656.7,16.34,0.1089,0.2346],[0.063,13.1,83.67,527.2,18.24,0.1144,0.2785],[0.1325,20.6,135.1,1321.0,18.7,0.128,0.3021],[0.153,18.1,117.7,1030.0,22.02,0.1389,0.2675],[0.0632,12.84,81.81,506.2,18.75,0.1249,0.3306],[0.2091,26.14,170.1,2145.0,18.57,0.1624,0.3537],[0.1834,17.87,115.7,985.5,21.59,0.1368,0.3698],[0.0111,14.23,90.24,624.1,19.31,0.1021,0.2439],[0.0442,9.507,59.9,274.9,11.79,0.1733,0.322],[0.0258,11.02,69.86,368.6,14.88,0.1275,0.3557],[0.0278,9.565,62.06,273.9,20.98,0.1639,0.2972],[0.1785,17.67,119.1,959.5,22.15,0.164,0.2844],[0.0509,10.01,65.59,310.1,13.86,0.0984,0.3282],[0.1716,17.09,111.8,888.3,23.84,0.1851,0.3383],[0.1614,17.31,114.6,925.1,23.94,0.1648,0.3321],[0.0652,10.41,67.03,330.7,21.01,0.1548,0.2878],[0.0696,12.33,78.0,466.7,19.04,0.129,0.24],[0.175,10.31,65.5,324.7,17.33,0.1482,0.4228],[0.0588,13.46,85.67,554.9,16.49,0.1296,0.2383],[0.1789,24.86,165.9,1866.0,21.31,0.1193,0.2551],[0.0479,9.733,62.56,284.4,14.64,0.1207,0.2254],[0.1899,23.32,151.6,1681.0,24.52,0.1585,0.3313],[0.1383,16.57,110.3,812.4,15.79,0.1411,0.2589],[0.0866,14.11,89.71,611.1,16.52,0.1176,0.2618],[0.152,19.77,128.8,1223.0,19.65,0.15,0.265],[0.0741,14.08,91.36,605.5,10.94,0.1451,0.271],[0.2102,22.39,150.1,1610.0,16.15,0.1478,0.3751],[0.2508,23.37,170.3,1623.0,23.97,0.1639,0.544],[0.0793,14.24,91.88,622.1,18.0,0.1289,0.2779],[0.0613,13.11,84.53,525.1,20.97,0.1557,0.2762],[0.1708,15.53,96.66,614.9,15.86,0.1536,0.3527],[0.2867,30.0,211.7,2562.0,24.91,0.1573,0.2355],[0.1841,20.33,141.3,1298.0,26.29,0.1392,0.2311],[0.0763,13.67,87.78,567.9,15.65,0.1377,0.3379],[0.1642,22.93,152.2,1603.0,18.52,0.1398,0.3695],[0.1225,16.21,108.4,808.9,21.46,0.1306,0.302],[0.1956,24.56,152.9,1623.0,24.59,0.1249,0.3956],[0.1205,13.83,91.46,574.7,21.8,0.1304,0.2972],[0.1397,16.34,109.4,803.6,15.24,0.1277,0.3151],[0.0695,16.11,102.9,803.7,24.02,0.1115,0.2522],[0.1476,16.43,107.5,830.9,22.76,0.1257,0.2556],[0.1001,16.36,104.5,830.6,14.76,0.1006,0.2027],[0.0791,15.1,97.59,699.4,18.3,0.1339,0.2678],[0.2115,18.23,123.5,1025.0,19.83,0.1551,0.2834],[0.1573,24.22,156.1,1750.0,23.03,0.119,0.3689],[0.0588,12.83,82.14,495.2,17.84,0.114,0.2227],[0.0238,10.92,68.81,366.1,19.94,0.1316,0.1934],[0.0845,13.06,82.96,512.5,12.84,0.1431,0.2772],[0.1565,16.33,109.5,826.4,19.77,0.1431,0.2718],[0.1184,16.99,108.6,906.5,24.98,0.1265,0.2651],[0.0,7.93,50.41,185.2,13.43,0.1584,0.2932],[0.0743,13.34,84.58,547.8,20.52,0.1123,0.2694],[0.0975,10.76,72.22,361.2,19.4,0.1559,0.2622],[0.032,11.54,74.22,402.8,19.29,0.1219,0.2826],[0.1986,16.31,106.4,827.2,15.56,0.1862,0.3147],[0.1218,13.14,85.51,521.7,18.33,0.1688,0.2806],[0.0844,13.29,85.56,544.1,18.54,0.1184,0.2983],[0.291,28.4,206.8,2360.0,19.67,0.1701,0.4055],[0.0828,13.01,83.99,518.1,21.26,0.1699,0.2829],[0.0533,11.05,71.68,367.0,16.99,0.1467,0.2533],[0.1105,13.33,89.0,527.4,20.76,0.1287,0.2226],[0.1505,15.3,107.0,709.0,19.65,0.0895,0.2398],[0.0614,11.16,72.62,374.4,20.19,0.13,0.2383],[0.105,9.628,64.48,284.4,15.83,0.1724,0.2926],[0.0725,13.67,87.54,583.0,21.53,0.15,0.2438],[0.0385,9.414,63.34,270.0,15.76,0.1179,0.1652],[0.2027,18.81,127.1,1095.0,16.67,0.1878,0.3585],[0.2034,20.19,130.3,1272.0,22.91,0.1855,0.3274],[0.1185,20.58,129.2,1261.0,20.01,0.1072,0.4882],[0.0896,12.82,83.74,510.5,10.82,0.1548,0.3016],[0.1674,22.25,145.4,1549.0,17.12,0.1503,0.2894],[0.2248,26.02,180.9,2073.0,20.2,0.1696,0.3222],[0.1221,15.7,102.8,745.5,10.89,0.1313,0.2889],[0.0898,14.26,91.99,632.1,16.39,0.1025,0.2048],[0.051,15.49,100.3,725.9,17.21,0.1157,0.2364],[0.1329,16.89,113.2,848.7,24.69,0.1471,0.347],[0.1218,22.32,148.2,1538.0,18.91,0.1021,0.2841],[0.1423,16.11,105.9,762.6,16.39,0.1386,0.259],[0.1732,22.63,148.7,1589.0,25.12,0.1275,0.3305],[0.0819,13.34,91.38,545.2,13.29,0.1427,0.3469],[0.1514,19.26,124.9,1156.0,19.48,0.1546,0.2837],[0.1312,19.47,129.7,1175.0,21.54,0.1395,0.348],[0.1374,17.5,114.3,922.8,13.93,0.1223,0.2723],[0.1379,22.52,145.6,1590.0,21.91,0.1465,0.3109],[0.0933,14.49,92.04,653.6,22.47,0.1419,0.2829],[0.0697,13.33,86.16,546.7,16.67,0.1271,0.1712],[0.0848,12.32,79.93,462.0,15.39,0.119,0.2676],[0.1667,18.55,121.4,971.4,17.57,0.1411,0.3414],[0.0861,11.92,76.53,434.0,13.39,0.1367,0.2102],[0.0,10.62,66.53,342.9,11.97,0.1234,0.3105],[0.1216,19.92,129.0,1233.0,18.05,0.1314,0.2792],[0.064,12.78,82.66,503.0,17.31,0.1413,0.2584],[0.1012,14.48,97.17,643.8,15.92,0.1312,0.3549],[0.0341,11.95,77.79,441.2,14.97,0.1076,0.23],[0.0604,13.15,86.26,509.6,14.65,0.1424,0.2727],[0.1865,13.74,91.93,591.7,16.58,0.1385,0.5774],[0.084,16.25,107.1,809.7,18.77,0.0997,0.2852],[0.1599,15.85,108.6,766.9,15.18,0.1316,0.2691],[0.0602,15.34,97.19,725.9,17.91,0.0971,0.235],[0.063,14.16,90.82,616.7,20.78,0.1297,0.3196],[0.0788,9.092,58.08,249.8,20.7,0.163,0.3322],[0.1571,11.02,71.04,380.5,15.34,0.1292,0.3108],[0.0551,11.99,76.25,440.8,13.08,0.1341,0.2859],[0.0972,14.77,97.67,677.3,15.34,0.1478,0.3849],[0.0821,13.59,86.6,564.2,17.94,0.1217,0.3113],[0.1515,20.47,132.9,1302.0,20.74,0.1418,0.2463],[0.0844,18.22,120.3,1032.0,19.46,0.0877,0.2527],[0.0703,13.14,84.08,532.8,12.74,0.1275,0.2514],[0.0395,12.36,78.07,470.0,12.96,0.1171,0.2738],[0.0791,13.32,88.91,543.9,20.18,0.1358,0.3168],[0.1777,22.03,146.6,1495.0,15.94,0.1124,0.2443],[0.2247,26.73,174.9,2232.0,18.15,0.1438,0.3643],[0.0819,13.58,87.36,553.0,22.22,0.1452,0.2268],[0.2346,28.01,184.2,2403.0,22.04,0.1228,0.3589],[0.0575,15.98,102.3,782.1,19.76,0.1045,0.2646],[0.046,11.6,73.66,414.0,9.71,0.1436,0.209],[0.1474,20.05,130.7,1260.0,18.8,0.1168,0.281],[0.1721,23.14,155.3,1660.0,24.68,0.1376,0.216],[0.0848,16.11,104.6,793.7,16.95,0.1216,0.2404],[0.0939,13.5,86.97,549.1,12.39,0.1385,0.2827],[0.116,17.98,116.6,993.6,19.63,0.1401,0.2884],[0.1827,18.79,125.0,1102.0,11.89,0.1531,0.3216],[0.0431,11.35,72.01,396.5,14.71,0.1216,0.1902],[0.0,11.54,73.2,408.3,15.15,0.1076,0.271],[0.0,9.262,58.36,259.2,14.45,0.1162,0.2592],[0.0991,11.26,73.07,390.2,18.06,0.1301,0.2614],[0.2035,17.79,123.5,981.2,20.11,0.1415,0.3054],[0.0093,14.0,88.18,608.8,22.22,0.0812,0.2295],[0.0399,13.63,86.7,570.7,13.06,0.1162,0.1783],[0.2688,33.12,220.8,3216.0,21.87,0.1472,0.2856],[0.2903,26.68,176.5,2089.0,26.57,0.1491,0.4098],[0.1541,20.11,129.3,1269.0,20.31,0.1414,0.3437],[0.063,12.37,79.12,467.2,14.92,0.1121,0.1811],[0.1226,17.8,113.8,973.1,22.41,0.1301,0.3175],[0.0104,11.87,75.39,437.0,15.11,0.1521,0.2933],[0.1571,21.31,139.2,1410.0,18.58,0.1234,0.3206],[0.1099,13.01,84.42,521.5,17.19,0.1323,0.2572],[0.0431,12.57,79.57,489.5,17.39,0.1356,0.32],[0.0482,13.35,86.65,546.7,15.9,0.1096,0.2482],[0.1772,15.74,106.4,762.4,23.12,0.1533,0.5166],[0.0477,13.75,89.04,579.5,21.41,0.0939,0.2179],[0.0,9.968,62.25,303.8,18.22,0.0712,0.1909],[0.1459,15.65,101.7,768.9,26.86,0.1785,0.3215],[0.1727,16.08,118.6,784.7,23.21,0.1316,0.3],[0.0824,13.88,90.81,600.6,16.33,0.1097,0.3024],[0.1673,16.39,111.6,806.9,22.29,0.1737,0.308],[0.0918,19.76,129.1,1228.0,21.84,0.0882,0.2369],[0.1708,23.36,166.4,1688.0,22.49,0.1322,0.3193],[0.1838,18.33,117.9,1044.0,20.22,0.1552,0.4753],[0.108,14.44,92.15,638.4,19.56,0.1429,0.2668],[0.1939,20.42,139.5,1239.0,19.32,0.1381,0.2928],[0.2733,25.12,177.0,1986.0,26.67,0.1536,0.3198],[0.2013,19.2,128.5,1153.0,23.75,0.2226,0.4432],[0.1015,14.97,96.05,677.9,18.6,0.1426,0.3014],[0.1252,17.77,117.7,989.5,16.68,0.1491,0.3415],[0.0559,10.42,67.08,331.6,17.27,0.1415,0.2989],[0.1096,19.8,130.0,1210.0,20.26,0.1111,0.3275],[0.1126,14.55,99.48,639.3,22.54,0.1349,0.4128],[0.1035,17.38,113.7,932.7,12.91,0.1222,0.232],[0.192,23.24,158.3,1656.0,22.14,0.1178,0.2909],[0.0691,13.3,85.22,546.3,18.94,0.128,0.2535],[0.1595,28.11,188.5,2499.0,18.47,0.1142,0.1648],[0.1099,18.07,120.4,1021.0,25.56,0.1243,0.1603],[0.1772,16.86,115.0,811.3,23.81,0.1559,0.4724],[0.1654,15.75,104.4,750.1,16.93,0.146,0.363],[0.1138,13.25,86.2,531.2,18.35,0.1405,0.3397],[0.0357,11.48,75.4,403.7,17.48,0.0953,0.2868],[0.182,25.73,170.3,2009.0,21.56,0.1353,0.307],[0.1625,27.9,180.2,2477.0,32.47,0.1408,0.2713],[0.0806,15.34,99.71,706.2,13.16,0.1311,0.238],[0.0909,14.98,101.1,686.6,13.9,0.1376,0.3065],[0.0558,11.17,71.94,375.6,17.53,0.1406,0.3055],[0.1479,19.56,125.9,1088.0,20.25,0.1552,0.3993],[0.0968,15.14,98.84,708.8,17.02,0.1276,0.2506],[0.1087,16.77,110.4,873.2,13.47,0.1297,0.3062],[0.0446,11.52,73.47,395.4,15.46,0.1341,0.2615],[0.1379,16.41,114.2,808.2,15.51,0.1136,0.2954],[0.118,14.2,90.67,624.0,23.97,0.1227,0.2826],[0.1977,15.2,105.3,706.0,22.33,0.1777,0.3407],[0.2543,19.59,133.5,1189.0,19.08,0.1703,0.3109],[0.0208,12.08,79.82,452.3,27.08,0.092,0.2849],[0.03,12.36,78.44,470.9,33.81,0.0999,0.2911],[0.1563,24.47,162.7,1872.0,27.81,0.1223,0.2437],[0.0722,10.51,65.74,335.9,15.91,0.1504,0.2757],[0.0796,15.33,98.27,715.5,21.25,0.1287,0.2226],[0.2593,31.01,206.0,2944.0,26.97,0.1481,0.3103],[0.1445,24.22,161.7,1750.0,21.46,0.1228,0.2238],[0.0822,15.75,102.5,764.0,27.85,0.1081,0.189],[0.2066,22.51,141.2,1408.0,39.28,0.1365,0.2853],[0.0922,14.85,94.11,683.4,15.6,0.1278,0.253],[0.0405,13.2,83.85,543.4,15.04,0.1037,0.2901],[0.1218,12.58,87.16,472.9,18.19,0.1347,0.3308],[0.0611,15.01,98.0,706.0,23.77,0.0937,0.2663],[0.1564,21.65,144.9,1417.0,23.5,0.1463,0.292],[0.0674,11.48,73.68,402.8,19.86,0.1515,0.2883],[0.0497,13.94,88.28,602.0,17.43,0.1101,0.2767],[0.1561,14.39,105.0,639.1,14.11,0.1254,0.2639],[0.0614,12.25,77.98,455.7,25.22,0.1499,0.3409],[0.0961,12.65,80.88,491.8,14.93,0.1389,0.2664],[0.2105,25.58,165.3,2010.0,23.56,0.1211,0.3126],[0.0654,12.97,83.12,508.9,18.45,0.1183,0.274],[0.2507,25.28,159.8,1933.0,19.82,0.171,0.2749],[0.1857,19.85,130.9,1222.0,17.08,0.1416,0.3138],[0.1999,25.7,163.1,1972.0,19.33,0.1497,0.3379],[0.1374,16.39,108.1,826.0,17.05,0.1512,0.3068],[0.1941,25.05,178.6,1926.0,28.77,0.1281,0.2818],[0.2229,17.73,119.8,928.8,17.27,0.1765,0.3258],[0.2462,19.85,143.7,1226.0,23.2,0.1504,0.3277],[0.2014,18.49,126.3,1035.0,33.56,0.1883,0.3512],[0.1697,24.33,162.3,1844.0,27.06,0.1522,0.3151],[0.0824,19.85,128.2,1218.0,23.06,0.124,0.2452],[0.1528,20.39,137.9,1295.0,22.13,0.1134,0.3067],[0.0857,17.91,115.9,988.6,19.38,0.1084,0.2683],[0.1984,21.58,140.5,1436.0,22.07,0.1558,0.3216],[0.1659,32.49,214.0,3432.0,31.12,0.1401,0.2868],[0.0793,11.88,78.28,424.8,18.95,0.1213,0.294],[0.0619,14.8,97.66,661.5,21.84,0.1005,0.2446],[0.0578,13.9,89.27,597.5,16.21,0.1256,0.3604],[0.086,11.69,76.51,410.4,20.39,0.1335,0.2605],[0.0333,14.91,94.44,684.6,16.82,0.0857,0.2458],[0.0875,12.32,78.27,457.5,13.04,0.1358,0.2733],[0.1841,28.19,195.9,2384.0,20.99,0.1272,0.2833],[0.0516,10.75,68.09,355.2,15.67,0.1467,0.2841],[0.1136,20.92,135.1,1320.0,24.48,0.1315,0.2504],[0.0895,12.4,79.46,472.4,17.36,0.1359,0.222],[0.0111,12.2,77.37,458.0,14.16,0.1259,0.2758],[0.1294,19.96,129.0,1236.0,19.98,0.1243,0.2567],[0.0518,15.5,98.91,739.1,17.84,0.105,0.2335],[0.0999,14.98,98.37,670.0,15.18,0.1185,0.2955],[0.1872,23.72,159.8,1724.0,26.6,0.1782,0.3258],[0.0829,13.31,84.7,533.7,14.02,0.1036,0.3101],[0.2252,23.79,152.4,1628.0,18.18,0.1518,0.359],[0.1732,18.55,126.9,1031.0,18.77,0.1365,0.277],[0.1017,13.9,92.12,595.6,15.7,0.0993,0.1999],[0.0088,13.5,85.56,564.1,18.4,0.1038,0.2505],[0.1155,13.24,92.2,546.1,20.76,0.1116,0.2465],[0.0537,13.62,87.4,577.0,13.12,0.0962,0.2309],[0.0931,11.86,78.27,437.6,19.96,0.1028,0.2955],[0.062,12.36,79.29,459.3,18.89,0.1118,0.3267],[0.1021,15.77,101.7,767.3,19.73,0.0998,0.2272],[0.1489,16.25,109.1,809.8,19.1,0.1313,0.2962],[0.1056,13.74,88.81,585.4,16.02,0.1483,0.338],[0.0914,13.06,84.35,517.8,17.46,0.1369,0.3101],[0.0634,13.5,88.54,553.7,13.78,0.1298,0.2369],[0.058,14.67,94.17,661.1,13.27,0.117,0.2823],[0.0319,11.37,72.42,392.2,12.35,0.0931,0.2143],[0.0716,13.36,85.1,553.6,18.14,0.1137,0.1978],[0.0753,16.22,105.8,819.7,18.17,0.0945,0.2636],[0.0312,10.93,70.1,362.7,23.09,0.1143,0.2227],[0.198,25.93,171.1,2053.0,18.9,0.1495,0.2968],[0.0762,13.46,88.13,551.3,19.89,0.105,0.2685],[0.1923,23.68,158.8,1696.0,23.86,0.1347,0.3294],[0.0653,11.06,70.76,375.4,18.61,0.1413,0.2213],[0.0551,12.68,82.69,489.8,18.16,0.1144,0.2208],[0.0482,12.44,81.39,476.5,24.49,0.0954,0.3244],[0.025,14.41,92.0,636.9,15.82,0.1128,0.2651],[0.0139,9.699,60.9,285.5,14.4,0.0986,0.2991],[0.0221,14.97,95.48,698.7,12.71,0.0902,0.2267],[0.0353,14.73,93.96,672.4,13.84,0.1016,0.2107],[0.0574,12.61,80.92,483.1,19.11,0.1223,0.3487],[0.0581,16.46,103.7,840.8,15.69,0.1011,0.253],[0.0841,14.19,92.04,618.8,13.37,0.1194,0.2564],[0.0472,12.34,81.23,467.8,10.72,0.1092,0.339],[0.0,8.952,56.65,240.1,18.6,0.1347,0.3142],[0.0278,13.34,84.48,544.2,16.85,0.1104,0.1917],[0.0185,12.85,81.6,513.1,14.08,0.1001,0.2293],[0.1776,21.84,140.9,1485.0,18.87,0.1434,0.2812],[0.1145,10.06,68.62,297.1,18.9,0.1221,0.3135],[0.0283,12.9,81.76,515.9,17.0,0.0841,0.1901],[0.0974,11.28,71.53,390.4,16.18,0.1402,0.2608],[0.1425,23.06,150.2,1657.0,19.66,0.1054,0.3055],[0.1155,14.04,92.8,599.5,13.32,0.1547,0.2382],[0.2685,25.3,171.1,1938.0,21.51,0.1592,0.5558],[0.0556,13.75,91.11,583.1,15.21,0.1256,0.2661],[0.056,13.71,88.7,574.4,17.3,0.1384,0.2688],[0.0589,15.53,98.4,749.9,12.88,0.1281,0.21],[0.028,13.07,82.74,523.4,17.93,0.1013,0.2171],[0.1583,19.28,129.8,1121.0,20.71,0.159,0.3103],[0.1047,17.73,113.7,975.2,21.88,0.1426,0.2736],[0.1981,18.76,124.3,1070.0,15.51,0.1435,0.3019],[0.0986,14.42,99.21,634.3,19.35,0.1288,0.3596],[0.0202,11.98,76.91,436.1,19.86,0.1424,0.3292],[0.0167,12.76,82.08,492.7,14.78,0.1166,0.2815],[0.0398,13.35,84.53,544.3,19.02,0.1222,0.2554],[0.1827,20.99,143.2,1362.0,21.0,0.1449,0.2623],[0.0585,13.72,87.38,576.0,14.23,0.1142,0.2432],[0.2048,24.54,161.1,1873.0,21.43,0.1498,0.3679],[0.065,11.16,71.98,384.0,17.53,0.1402,0.2894],[0.2089,30.67,202.4,2906.0,24.27,0.1515,0.2593],[0.1414,16.67,111.4,862.1,16.54,0.1294,0.3053],[0.0812,10.75,71.25,353.6,16.84,0.1233,0.2982],[0.1075,11.92,79.76,440.0,14.96,0.1418,0.3301],[0.2255,22.75,157.6,1540.0,21.68,0.1218,0.4045],[0.0786,13.06,84.16,516.4,15.45,0.146,0.2765],[0.0407,10.88,70.89,357.1,14.71,0.136,0.2434],[0.0509,13.64,86.54,562.6,18.9,0.1289,0.288],[0.1251,17.27,114.2,880.8,14.74,0.122,0.3109],[0.0655,12.51,79.67,475.8,16.03,0.1531,0.2851],[0.0477,12.81,83.09,496.2,14.96,0.1293,0.3124],[0.0426,13.28,83.61,542.5,17.07,0.0996,0.2731],[0.2135,17.36,119.4,915.3,19.22,0.155,0.4245],[0.2756,33.13,229.3,3234.0,17.46,0.153,0.369],[0.1526,18.51,121.2,1050.0,25.74,0.166,0.2654],[0.0392,12.12,79.62,453.5,14.07,0.0886,0.2576],[0.0926,13.37,89.02,547.4,19.07,0.1096,0.2121],[0.1258,14.19,94.22,591.2,18.59,0.1343,0.3113],[0.0556,15.11,96.74,694.4,16.21,0.1153,0.2362],[0.0476,9.981,65.27,302.0,15.49,0.1015,0.2434],[0.0505,12.02,75.79,439.6,18.32,0.1333,0.2454],[0.0164,13.72,86.82,585.7,18.07,0.0929,0.2233],[0.0561,14.2,92.94,621.2,21.57,0.114,0.2637],[0.0831,13.75,87.82,579.7,18.84,0.1298,0.2744],[0.0912,18.13,117.2,1009.0,18.29,0.1338,0.2394],[0.0699,14.73,93.76,663.5,16.95,0.1213,0.2741],[0.1765,24.31,161.2,1780.0,21.78,0.1327,0.2609],[0.2152,24.19,160.0,1671.0,26.83,0.1278,0.3271],[0.0883,14.29,93.85,624.6,18.02,0.1368,0.3218],[0.182,30.75,199.5,3143.0,17.25,0.1363,0.251],[0.2432,27.66,195.0,2227.0,21.9,0.1294,0.2741],[0.2248,19.38,129.3,1165.0,23.29,0.1415,0.4824],[0.0818,16.2,104.5,819.1,13.21,0.1126,0.2487],[0.1966,22.69,152.1,1535.0,15.1,0.1192,0.273],[0.2112,25.37,166.8,1946.0,17.35,0.1562,0.2689],[0.0699,14.84,99.16,670.6,16.07,0.1105,0.3323],[0.1251,16.97,113.1,861.5,16.07,0.1235,0.3153],[0.1465,10.85,76.51,351.9,20.22,0.1143,0.2597],[0.0578,14.69,97.11,680.6,28.21,0.1108,0.2694],[0.1054,14.54,97.96,657.0,15.15,0.1275,0.3387],[0.2524,13.24,91.76,508.1,18.83,0.2184,0.4154],[0.1318,12.84,84.93,476.1,12.96,0.161,0.3343],[0.0675,12.09,79.73,447.1,14.93,0.1095,0.3202],[0.1092,12.57,87.36,488.4,22.72,0.088,0.2191],[0.098,14.18,95.23,600.5,17.48,0.1427,0.2819],[0.0917,14.24,96.59,623.7,13.72,0.1166,0.2736],[0.1359,15.79,102.2,758.2,23.29,0.1312,0.2477],[0.0914,13.13,87.65,529.9,14.09,0.1026,0.2677],[0.0454,15.51,99.66,745.3,16.16,0.0848,0.2542],[0.0827,12.04,79.73,450.0,15.5,0.1102,0.2157],[0.1825,20.82,142.0,1313.0,23.21,0.1251,0.2576],[0.067,11.38,73.23,394.5,12.22,0.1343,0.2937],[0.0,10.17,64.01,317.0,16.84,0.146,0.2445],[0.2121,21.2,142.1,1359.0,19.97,0.1681,0.3187],[0.2422,26.23,172.0,2081.0,22.28,0.1502,0.3828],[0.0627,13.56,88.33,559.5,17.72,0.1432,0.3049],[0.0791,14.92,96.42,684.5,17.18,0.1066,0.2523],[0.1453,14.8,97.33,675.2,18.89,0.1428,0.2666],[0.083,13.74,90.72,591.0,17.46,0.0953,0.1988],[0.0556,12.68,80.79,496.7,14.83,0.112,0.259],[0.0536,13.45,86.0,562.0,17.26,0.1244,0.2779],[0.1964,20.8,149.6,1304.0,21.02,0.1873,0.3245],[0.0688,13.8,87.64,589.5,10.91,0.1374,0.246],[0.0661,14.13,96.31,621.9,18.29,0.0933,0.3207],[0.0839,13.86,89.69,580.9,16.17,0.1172,0.3297],[0.0479,13.18,84.11,533.1,14.95,0.1048,0.2298],[0.0789,12.4,82.76,472.4,18.59,0.1363,0.2251],[0.1129,17.71,115.9,947.9,14.86,0.1206,0.2778],[0.056,14.4,91.63,645.8,21.37,0.094,0.2488],[0.1974,21.08,138.1,1349.0,20.66,0.1482,0.306],[0.0953,14.1,89.0,610.2,17.92,0.124,0.3455],[0.087,13.05,85.07,521.3,17.57,0.1453,0.2973],[0.0743,12.41,79.93,471.4,16.83,0.1369,0.2998],[0.0256,9.965,66.61,301.0,21.68,0.1086,0.2376],[0.1308,16.76,110.2,867.1,22.11,0.1077,0.3163],[0.0658,17.26,110.1,931.4,29.81,0.1148,0.3233],[0.0826,13.05,85.09,522.9,21.17,0.1426,0.3075],[0.0377,10.85,68.73,359.4,21.7,0.1526,0.2872],[0.2134,23.17,157.1,1748.0,21.08,0.1517,0.3003],[0.0822,13.65,88.12,566.9,12.17,0.1314,0.2775],[0.0431,12.36,79.26,458.0,21.41,0.1282,0.2976],[0.0666,13.07,86.43,520.5,19.04,0.1249,0.3035],[0.1108,16.46,114.1,809.2,13.98,0.1312,0.2827],[0.1105,12.64,81.93,475.7,16.02,0.1415,0.2787],[0.1407,15.14,101.4,708.8,19.13,0.1147,0.2744],[0.0459,11.21,71.79,380.9,19.12,0.1398,0.3196],[0.0258,11.11,69.92,376.3,21.28,0.1126,0.2349],[0.0931,12.13,81.41,440.4,14.98,0.1327,0.302],[0.0748,12.76,83.69,489.5,21.98,0.1303,0.2965],[0.0404,11.68,74.35,421.1,16.62,0.103,0.2383],[0.0361,13.82,88.87,586.8,17.67,0.1068,0.2165],[0.2475,16.35,125.4,832.7,22.53,0.1419,0.2866],[0.0737,12.88,89.61,515.8,17.68,0.145,0.2556],[0.2173,22.03,146.0,1479.0,19.54,0.1665,0.3032],[0.1708,22.66,145.3,1603.0,21.97,0.139,0.3007],[0.0797,16.31,102.3,777.5,16.94,0.1218,0.2525],[0.1827,17.04,113.9,869.3,19.62,0.1613,0.3179],[0.0638,14.45,95.14,626.9,19.54,0.1214,0.3313],[0.0745,15.66,101.2,750.0,15.98,0.1195,0.2725],[0.0589,15.63,100.9,749.1,19.6,0.1118,0.2513],[0.0822,14.91,96.53,688.9,15.66,0.1034,0.2136],[0.1555,12.36,90.14,476.4,17.2,0.1391,0.254],[0.1739,20.38,132.8,1284.0,25.42,0.1436,0.25],[0.0331,15.27,97.9,706.6,15.79,0.1072,0.1859],[0.0222,10.94,69.35,366.3,18.32,0.0979,0.2699],[0.1535,20.38,133.3,1292.0,16.85,0.1263,0.2842],[0.1202,12.98,84.48,513.9,24.89,0.1311,0.2599],[0.197,21.53,145.4,1437.0,28.03,0.1401,0.2972],[0.0831,16.43,105.9,829.5,17.66,0.1226,0.36],[0.0959,16.3,108.1,830.5,19.34,0.1089,0.2471],[0.228,25.68,168.2,2022.0,20.52,0.1368,0.2268],[0.0875,12.79,83.51,507.2,21.54,0.0946,0.2305],[0.1466,21.44,139.8,1421.0,25.0,0.1528,0.2293],[0.0712,13.09,85.07,523.7,28.23,0.1208,0.2447],[0.1069,15.8,103.1,749.9,13.98,0.1347,0.2606],[0.0985,14.34,91.62,633.5,17.15,0.1225,0.327],[0.0776,15.05,96.69,705.6,30.72,0.1172,0.2196],[0.0683,13.12,86.04,527.8,29.29,0.1406,0.2884],[0.06,14.35,91.29,632.9,25.25,0.1289,0.2444],[0.0592,14.34,91.06,628.5,25.13,0.1218,0.2306],[0.0487,10.67,68.03,349.9,28.2,0.111,0.2321],[0.1555,22.96,152.1,1648.0,27.15,0.16,0.301],[0.2625,36.04,251.2,4254.0,26.27,0.1357,0.2641],[0.0556,15.4,100.4,734.6,26.99,0.1017,0.2345],[0.0829,12.77,82.68,495.1,18.36,0.1342,0.321],[0.1045,14.9,95.1,687.6,18.22,0.1282,0.2235],[0.1357,15.44,115.0,733.5,20.13,0.1201,0.2845],[0.1181,14.8,100.9,689.1,20.74,0.1351,0.2563],[0.025,11.15,71.11,380.2,18.1,0.1388,0.3057],[0.1996,21.57,143.6,1437.0,23.33,0.1207,0.2301],[0.1416,13.36,88.14,528.1,18.18,0.178,0.266],[0.0656,11.14,70.88,385.2,18.49,0.1234,0.3174],[0.0555,13.6,87.24,567.6,28.14,0.1041,0.2404],[0.1147,17.18,112.0,906.6,14.93,0.1065,0.2688],[0.0,13.45,85.08,558.9,29.97,0.0942,0.2409],[0.0797,11.94,80.78,433.1,15.62,0.1332,0.2581],[0.0978,14.09,93.22,605.8,15.73,0.1326,0.3006],[0.1339,16.45,112.1,828.5,20.53,0.1153,0.2534],[0.0622,15.14,101.2,718.9,16.62,0.0938,0.2679],[0.0743,12.4,82.04,467.6,14.59,0.1352,0.2941],[0.1775,17.39,122.1,939.7,19.51,0.1377,0.3318],[0.0569,13.34,88.83,547.4,18.03,0.1208,0.2406],[0.0815,16.41,104.4,830.5,19.24,0.1064,0.2356],[0.1335,14.83,94.94,660.2,14.06,0.1393,0.3227],[0.0908,14.96,95.78,686.5,17.64,0.1199,0.2518],[0.1452,17.01,112.5,854.3,11.28,0.1541,0.2557],[0.1342,13.78,97.82,580.6,16.41,0.1175,0.3231],[0.0783,16.46,106.0,831.0,16.85,0.1142,0.2455],[0.206,23.96,153.9,1740.0,18.82,0.1514,0.3266],[0.0982,13.32,86.57,549.8,16.17,0.1526,0.2804],[0.0874,19.18,127.3,1084.0,20.2,0.1009,0.4677],[0.0634,14.17,92.74,622.9,22.44,0.1256,0.31],[0.0834,19.82,127.1,1210.0,13.23,0.0986,0.1783],[0.1489,21.53,143.4,1426.0,20.56,0.1309,0.3251],[0.0268,13.19,83.24,534.0,12.83,0.0944,0.228],[0.042,14.5,95.29,648.3,20.54,0.1118,0.2687],[0.1017,16.01,103.9,783.6,20.21,0.1216,0.2369],[0.1407,14.38,95.29,633.7,18.17,0.1533,0.323],[0.1053,14.06,92.82,607.3,17.31,0.1276,0.3035],[0.1663,22.75,146.4,1600.0,17.52,0.1412,0.251],[0.2113,23.86,163.2,1760.0,21.24,0.1464,0.248],[0.1018,16.76,109.7,856.9,16.74,0.1135,0.2177],[0.1521,16.01,106.0,788.0,24.49,0.1794,0.3651],[0.0841,13.57,86.67,552.0,16.32,0.158,0.3155],[0.2264,30.79,211.5,2782.0,19.83,0.1199,0.2908],[0.1025,10.28,69.05,300.2,12.87,0.1902,0.3038],[0.1075,10.6,69.47,328.1,13.14,0.2006,0.2848],[0.0809,13.16,85.13,515.3,20.04,0.1402,0.2709],[0.0951,11.69,76.08,411.1,17.12,0.1662,0.278],[0.1357,17.32,109.8,928.2,15.7,0.1354,0.23],[0.2163,17.11,117.7,909.4,23.95,0.1732,0.3013],[0.1056,12.45,81.25,473.8,14.69,0.1073,0.2604],[0.0796,15.61,101.7,760.2,14.7,0.1139,0.2334],[0.2051,16.41,113.3,844.4,20.52,0.1574,0.3585],[0.0919,16.76,108.5,862.0,13.66,0.1223,0.2626],[0.112,17.58,113.8,967.0,19.07,0.1246,0.2282],[0.0854,12.47,79.15,478.6,18.61,0.1483,0.306],[0.151,21.86,142.2,1493.0,20.58,0.1492,0.3074],[0.1613,23.73,160.5,1646.0,20.26,0.1417,0.2549],[0.1096,15.05,99.31,674.7,18.22,0.1456,0.2582],[0.0804,14.45,93.63,624.1,16.7,0.1475,0.3071],[0.0726,10.57,67.84,326.6,13.9,0.185,0.3681],[0.2475,29.92,205.7,2642.0,21.6,0.1342,0.3157],[0.0283,11.93,76.38,435.9,19.83,0.1108,0.2557],[0.1284,15.11,99.43,701.9,18.68,0.1425,0.2849],[0.0653,11.24,74.32,376.5,15.68,0.1419,0.2502],[0.0851,9.473,63.3,275.6,13.1,0.1641,0.2983],[0.1427,15.35,101.9,719.8,18.75,0.1624,0.3518],[0.107,13.61,87.22,564.9,12.27,0.1292,0.311],[0.1015,14.62,94.52,653.3,13.17,0.1394,0.216],[0.0739,13.45,86.92,549.9,13.44,0.1521,0.2781],[0.101,13.5,88.52,552.3,17.56,0.1349,0.2478],[0.0812,13.35,87.0,550.6,20.02,0.155,0.3206],[0.087,15.85,101.6,773.4,16.33,0.1264,0.2806],[0.1613,23.23,152.0,1645.0,20.67,0.1097,0.322],[0.0986,11.62,76.43,407.5,17.62,0.1428,0.2289],[0.2148,24.3,160.2,1809.0,20.86,0.1268,0.3077],[0.1362,15.29,104.3,728.3,22.55,0.138,0.2698],[0.1308,12.98,86.12,487.7,24.44,0.1768,0.2803],[0.0,9.077,57.17,248.0,25.49,0.1256,0.3058],[0.05,8.678,54.49,223.6,25.44,0.1596,0.279],[0.0692,12.26,78.78,457.8,14.44,0.1345,0.2329],[0.1205,16.22,113.5,808.9,24.99,0.134,0.3187],[0.1095,16.51,107.4,826.4,25.42,0.106,0.2722],[0.0796,14.37,92.48,629.6,28.06,0.1072,0.2473],[0.0684,15.05,99.17,688.6,20.7,0.1264,0.2249],[0.0717,15.35,97.58,729.8,23.23,0.1216,0.2642],[0.0238,11.25,71.12,384.9,16.35,0.1285,0.2681],[0.0833,10.83,71.08,357.4,16.58,0.1461,0.2691],[0.0385,10.93,69.1,364.2,19.34,0.1199,0.2552],[0.0326,13.03,83.9,505.6,24.21,0.1204,0.3059],[0.0,11.66,74.08,412.3,21.48,0.1001,0.2458],[0.0641,12.02,77.8,436.6,22.44,0.1087,0.3169],[0.065,13.87,88.1,594.7,29.43,0.1234,0.2407],[0.0256,9.845,62.86,295.8,21.94,0.1103,0.2435],[0.0649,13.89,88.84,595.7,28.92,0.1227,0.2372],[0.0913,10.84,69.57,357.6,27.61,0.1384,0.2226],[0.0223,10.65,67.88,347.3,19.59,0.1265,0.2262],[0.0,10.49,66.5,330.6,27.88,0.1073,0.2475],[0.1105,15.48,105.9,733.5,22.68,0.1026,0.2258],[0.0965,12.48,82.28,474.2,23.93,0.1298,0.2112],[0.1048,15.3,100.2,706.7,27.15,0.1241,0.225],[0.0,11.92,75.19,439.6,29.37,0.0927,0.1566],[0.2356,17.52,128.7,915.0,30.62,0.1417,0.4089],[0.2542,24.29,179.1,1819.0,25.09,0.1407,0.2929],[0.2216,25.45,166.1,2027.0,22.39,0.141,0.206],[0.1628,23.69,155.0,1731.0,28.25,0.1166,0.2572],[0.1418,18.98,126.7,1124.0,28.08,0.1139,0.2218],[0.265,25.74,184.6,1821.0,29.33,0.165,0.4087],[0.0,9.456,59.16,268.6,24.54,0.09,0.2871]],"y":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,1,1,0,1,1,0,0,0,0,1,0,1,1,0,0,0,0,1,0,1,1,0,1,0,1,1,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,1,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,1,1,1,0,1,1,0,0,0,1,1,0,1,0,1,1,0,1,1,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,1,0,0,1,1,0,0,1,1,0,0,0,0,1,0,0,1,1,1,0,1,0,1,0,0,0,1,0,0,1,1,0,1,1,1,1,0,1,1,1,0,1,0,1,0,0,1,0,1,1,1,1,0,0,1,1,0,0,0,1,0,0,0,0,0,1,1,0,0,1,0,0,1,1,0,1,0,0,0,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,0,1,0,0,1,0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,0,1,1,1,0,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,1,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,0,0,1,1,0,1,0,1,0,0,0,0,0,1,0,0,1,0,1,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0],"split":[0,0,0,0,1,1,0,1,0,0,0,0,1,0,1,0,0,0,1,0,1,0,1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,0,0,1,0,0,0,0,0,1,1,1,1,1,1,0,1,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,0,1,0,1,0,1,1,1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,1,0,1,0,1,0,0,1,0,1,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,1,0,0,1,0,1,0,0,0,1,0,0,1,1,1,1,1,0,0,0,0,0,1,1,0,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,0,1,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,1,0,0,0,1,0,0,0,0,1,0,1,0,1,0,0,0,0,1,1,0,0,1,0,0,0,1,1,0,0,1,0,1,0,0,1,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,1,1,0,1,1,0,0,0,0,1,0,0,0,0,0,1,0,1,1,0,1,1,0,0,0,1,1,1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,1,0,0,0,1,0,1,1,0,0,0,0,1]};
+function $(id){return document.getElementById(id);}
+function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
+function sig(x,n){n=n||3; if(!isFinite(x))return "undefined"; if(x===0)return "0"; return String(Number(x.toPrecision(n)));}
+function pct(x){if(!isFinite(x))return "undefined";var v=x*100,d=v>=1?1:(v>=0.1?2:3);var s=v.toFixed(d);if(s.indexOf(".")>=0)s=s.replace(/0+$/,"").replace(/\.$/,"");return s+"%";}
+function int(n){return Math.round(n).toLocaleString("en-US");}
+function p2(x){return (x*100).toFixed(2)+"%";}
+function post(p,lD,lH){var a=lD*p,b=lH*(1-p);return (a+b)===0?NaN:a/(a+b);}
+var LMIN=Math.log10(0.001),LMAX=Math.log10(0.5);
+function tToP(t){return +Math.pow(10,LMIN+t/1000*(LMAX-LMIN)).toPrecision(3);}
+function pToT(p){return Math.round((Math.log10(clamp(p,0.001,0.5))-LMIN)/(LMAX-LMIN)*1000);}
+
+/* ---------- shared: posterior-vs-prior curve ---------- */
+function drawCurve(svgId,curves,marks){
+  var W=640,H=280,L=52,R=18,T=14,B=40;
+  function X(p){return L+(Math.log10(p)-LMIN)/(LMAX-LMIN)*(W-L-R);}
+  function Y(v){return T+(1-v)*(H-T-B);}
+  var o="";
+  [0,.25,.5,.75,1].forEach(function(v){o+='<line class="axis" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text x="'+(L-8)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+(v*100)+'%</text>';});
+  [0.001,0.003,0.01,0.03,0.1,0.3,0.5].forEach(function(p){o+='<line class="axis" x1="'+X(p)+'" x2="'+X(p)+'" y1="'+T+'" y2="'+(H-B)+'"/><text x="'+X(p)+'" y="'+(H-B+16)+'" text-anchor="middle">'+pct(p)+'</text>';});
+  o+='<text x="'+((L+W-R)/2)+'" y="'+(H-4)+'" text-anchor="middle">Prior: prevalence in the population (log scale)</text>';
+  curves.forEach(function(c){
+    var pts=[];for(var i=0;i<=160;i++){var p=Math.pow(10,LMIN+i/160*(LMAX-LMIN));pts.push(X(p).toFixed(1)+","+Y(post(p,c.lD,c.lH)).toFixed(1));}
+    o+='<polyline class="'+c.cls+'" points="'+pts.join(" ")+'"/>';
+  });
+  marks.forEach(function(m){
+    var x=X(m.p),y=Y(m.v);
+    o+='<line class="vl" x1="'+x+'" x2="'+x+'" y1="'+y+'" y2="'+(H-B)+'"/><circle class="'+m.cls+'" cx="'+x+'" cy="'+y+'" r="6"/>';
+    var anchor=x>W-150?"end":"start",dx=anchor==="end"?-10:10;
+    var ly=y+(m.dy||-10); if(ly<T+12)ly=y+22; if(ly>H-B-4)ly=y-12;
+    o+='<text class="'+m.lc+'" x="'+(x+dx)+'" y="'+ly+'" text-anchor="'+anchor+'" style="paint-order:stroke;stroke:var(--panel);stroke-width:4px">'+m.label+'</text>';
+  });
+  $(svgId).innerHTML=o;
+}
+function eqHTML(names,se,p,fpr){
+  var num=se*p,fp=fpr*(1-p),den=num+fp;
+  return '<div class="eqrow"><span class="t post">'+names.post+'</span><span class="op">=</span>'+
+   '<span class="frac"><span class="num"><span class="t lik">'+names.l1+'</span> × <span class="t prior">'+names.p1+'</span></span>'+
+   '<span class="den evidence"><span class="t lik">'+names.l1+'</span> × <span class="t prior">'+names.p1+'</span> + <span class="t lik">'+names.l0+'</span> × <span class="t prior">'+names.p0+'</span></span></span></div>'+
+   '<div class="eqrow"><span class="op">=</span><span class="frac"><span class="num"><span class="t lik">'+sig(se)+'</span> × <span class="t prior">'+sig(p)+'</span></span>'+
+   '<span class="den evidence"><span class="t lik">'+sig(se)+'</span> × <span class="t prior">'+sig(p)+'</span> + <span class="t lik">'+sig(fpr)+'</span> × <span class="t prior">'+sig(1-p)+'</span></span></span>'+
+   '<span class="op">=</span><span class="frac"><span class="num">'+sig(num,4)+'</span><span class="den evidence">'+sig(num,4)+' + '+sig(fp,4)+' = <span class="t evid">'+sig(den,4)+'</span></span></span>'+
+   '<span class="op">=</span><span class="result">'+pct(num/den)+'</span></div>';
+}
+
+/* =================== PART A =================== */
+var STUDIES={
+  dk:{name:"Lunit INSIGHT MMG (Denmark)",sens:0.635,spec:0.975,p:2033/249402,
+    facts:[["Screenings","249,402"],["Cancers within 24 months","2,033"],["Sensitivity","63.5%"],["Specificity","97.5%"]],
+    prevWork:"Prevalence P(C) = 2,033 ÷ 249,402 = "+sig(2033/249402,4),
+    note:"The AI threshold was set to match the first radiologist's sensitivity (63.5%). Cancers include interval cancers diagnosed within 24 months of the screen.",
+    rep:{pos:0.030,posTol:0.0005,posTxt:"3.0%",ppv:0.175,ppvTol:0.0005,ppvTxt:"17.5%"},
+    ppvIndependent:true},
+  uk:{name:"Google AI v1.2 (UK)",sens:0.541,spec:0.943,p:0.00933/0.541,
+    facts:[["Women","115,973"],["AI cancer detection rate","9.33 per 1,000"],["Sensitivity","54.1%"],["Specificity","94.3%"]],
+    prevWork:"Prevalence is not stated directly. Detection rate = sensitivity × prevalence, so P(C) = 0.00933 ÷ 0.541 = "+sig(0.00933/0.541,4),
+    note:"Cancers include interval and next-round cancers found up to 39 months after the screen, which is why sensitivity looks low. The paper's PPV here is detection rate ÷ recall rate = 9.33 ÷ 65.",
+    rep:{pos:0.065,posTol:0.0005,posTxt:"6.5%",ppv:0.00933/0.065,ppvTol:0.001,ppvTxt:"14.4% (9.33 ÷ 65)"},
+    ppvIndependent:false}
+};
+var A={study:"dk",cSens:0.90,cSpec:0.95,cP:0.01,pop:0.05};
+function cur(){
+  if(A.study!=="custom")return STUDIES[A.study];
+  return {name:"your AI",sens:A.cSens,spec:A.cSpec,p:A.cP,custom:true};
+}
+function renderA(){
+  var s=cur(),se=s.sens,sp=s.spec,p=s.p,fpr=1-sp;
+  document.querySelectorAll("#studies button").forEach(function(b){b.setAttribute("aria-checked",b.dataset.s===A.study?"true":"false");b.tabIndex=b.dataset.s===A.study?0:-1;});
+  $("customCtl").style.display=s.custom?"":"none";
+  var facts='<h4>'+(s.custom?"Your AI":s.name)+'</h4>';
+  if(!s.custom){
+    facts+='<dl>'+s.facts.map(function(f){return '<dt>'+f[0]+'</dt><dd>'+f[1]+'</dd>';}).join("")+'</dl>';
+    facts+='<p class="note">'+s.prevWork+'.</p><p class="note">'+s.note+'</p>';
+  } else {
+    facts+='<p class="note">Enter a published sensitivity and specificity, and the prevalence of the population it was tested on.</p>';
+  }
+  $("studyFacts").innerHTML=facts;
+  $("aEq").innerHTML=eqHTML({post:"P(C | flag)",l1:"P(flag | C)",p1:"P(C)",l0:"P(flag | C′)",p0:"P(C′)"},se,p,fpr);
+
+  var pos=se*p+fpr*(1-p),ppv=se*p/pos;
+  if(!s.custom){
+    var lo={pos:1,ppv:1},hi={pos:0,ppv:0};
+    [se-0.0005,se+0.0005].forEach(function(a){[sp-0.0005,sp+0.0005].forEach(function(b){
+      var q=a*p+(1-b)*(1-p),v=a*p/q;
+      lo.pos=Math.min(lo.pos,q);hi.pos=Math.max(hi.pos,q);lo.ppv=Math.min(lo.ppv,v);hi.ppv=Math.max(hi.ppv,v);});});
+    function verdict(k,tol){var r=s.rep[k];return (r+tol>=lo[k]&&r-tol<=hi[k])?'<td class="ok">Consistent</td>':'<td class="off">Differs</td>';}
+    $("aCheck").style.display="";
+    $("aCheck").innerHTML='<table><caption>Bayes\' rule against the published results</caption><thead><tr><th>Quantity</th><th>Bayes predicts</th><th>Range allowed by rounding</th><th>Paper reports</th><th>Check</th></tr></thead><tbody>'+
+      '<tr><td>Recall rate P(flag)</td><td>'+p2(pos)+'</td><td>'+p2(lo.pos)+' to '+p2(hi.pos)+'</td><td>'+s.rep.posTxt+'</td>'+verdict("pos",s.rep.posTol)+'</tr>'+
+      '<tr class="work"><td colspan="5">P(flag) = '+sig(se)+' × '+sig(p,4)+' + '+sig(fpr)+' × '+sig(1-p,4)+' = '+sig(se*p,4)+' + '+sig(fpr*(1-p),4)+' = '+sig(pos,4)+'</td></tr>'+
+      '<tr><td>PPV P(C | flag)</td><td>'+p2(ppv)+'</td><td>'+p2(lo.ppv)+' to '+p2(hi.ppv)+'</td><td>'+s.rep.ppvTxt+'</td>'+verdict("ppv",s.rep.ppvTol)+'</tr>'+
+      '<tr class="work"><td colspan="5">'+(s.ppvIndependent?"An independent check: the paper counted PPV directly from outcomes.":"Not fully independent: the prevalence was derived from the detection rate, so this check reduces to the recall-rate check above.")+' Range: sensitivity and specificity varied by ±0.05 percentage points, the rounding in the paper.</td></tr>'+
+      '</tbody></table>';
+  } else { $("aCheck").style.display="none"; $("aCheck").innerHTML=""; }
+
+  var N=10000,sick=N*p,tp=sick*se,fp=(N-sick)*fpr;
+  $("aSentence").innerHTML='Out of 10,000 women screened, about '+int(sick)+' have breast cancer. The AI flags '+int(tp)+' of them. It also flags '+int(fp)+' of the '+int(N-sick)+
+    ' women without cancer. So of the '+int(tp+fp)+' flagged women, only '+int(tp)+' have cancer: about '+pct(ppv)+', despite a specificity of '+pct(sp)+'.';
+
+  var ppvPop=post(A.pop,se,fpr);
+  drawCurve("aCurve",[{lD:se,lH:fpr,cls:"cv"}],[
+    {p:p,v:ppv,cls:"m1",lc:"lab1",label:"Study population: "+pct(ppv),dy:-12},
+    {p:A.pop,v:ppvPop,cls:"m2",lc:"lab2",label:"Your population: "+pct(ppvPop),dy:22}
+  ]);
+  $("aCurveLegend").innerHTML='<span>At a prevalence of '+pct(A.pop)+', the same AI\'s flags are right '+pct(ppvPop)+' of the time.</span>';
+  $("aCap2").innerHTML='<b>Figure 2.2.</b> PPV of '+(s.custom?"your AI":"the "+s.name+" system")+' across populations, holding sensitivity at '+pct(se)+' and specificity at '+pct(sp)+
+    '. Ring: the study population ('+pct(p)+' prevalence). Filled dot: the population you chose ('+pct(A.pop)+').';
+
+  $("aPopRange").value=pToT(A.pop); $("aPopNum").value=+(A.pop*100).toFixed(3);
+  $("cSensRange").value=A.cSens*100; $("cSensNum").value=+(A.cSens*100).toFixed(1);
+  $("cSpecRange").value=A.cSpec*100; $("cSpecNum").value=+(A.cSpec*100).toFixed(1);
+  $("cPrevRange").value=pToT(A.cP); $("cPrevNum").value=+(A.cP*100).toFixed(3);
+}
+$("studies").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;A.study=b.dataset.s;renderA();});
+$("studies").addEventListener("keydown",function(e){
+  var keys=["dk","uk","custom"],i=keys.indexOf(A.study),j=-1;
+  if(e.key==="ArrowRight"||e.key==="ArrowDown")j=(i+1)%3; if(e.key==="ArrowLeft"||e.key==="ArrowUp")j=(i+2)%3;
+  if(j>=0){e.preventDefault();A.study=keys[j];renderA();document.querySelector('#studies button[data-s="'+keys[j]+'"]').focus();}
+});
+$("aPopRange").addEventListener("input",function(){A.pop=tToP(+this.value);renderA();});
+$("aPopNum").addEventListener("change",function(){A.pop=clamp(+this.value||1,0.1,50)/100;renderA();});
+$("cSensRange").addEventListener("input",function(){A.cSens=+this.value/100;renderA();});
+$("cSensNum").addEventListener("change",function(){A.cSens=clamp(+this.value||90,1,100)/100;renderA();});
+$("cSpecRange").addEventListener("input",function(){A.cSpec=+this.value/100;renderA();});
+$("cSpecNum").addEventListener("change",function(){A.cSpec=clamp(+this.value||95,1,100)/100;renderA();});
+$("cPrevRange").addEventListener("input",function(){A.cP=tToP(+this.value);renderA();});
+$("cPrevNum").addEventListener("change",function(){A.cP=clamp(+this.value||1,0.1,50)/100;renderA();});
+
+/* =================== PART B =================== */
+var FEAT=[
+  {label:"Concave points (worst)",hint:"How many inward dents the nucleus outline has"},
+  {label:"Radius (worst)",hint:"Size of the largest nuclei"},
+  {label:"Perimeter (worst)",hint:"Outline length of the largest nuclei, about 2π × radius"},
+  {label:"Area (worst)",hint:"Area of the largest nuclei, about π × radius²"},
+  {label:"Texture (mean)",hint:"Variation in grey levels inside the nuclei"},
+  {label:"Smoothness (worst)",hint:"Local wobble in the outline"},
+  {label:"Symmetry (worst)",hint:"How symmetric the largest nuclei are"}
+];
+var TR=[],TE=[];
+D.split.forEach(function(s,i){(s?TE:TR).push(i);});
+var Bst={feats:[0,1,4,5],K:3,alpha:1,pat:null,pop:0.01};
+var cutsCache={},binCache={};
+function quantile(sorted,q){var h=(sorted.length-1)*q,lo=Math.floor(h),hi=Math.ceil(h);return sorted[lo]+(h-lo)*(sorted[hi]-sorted[lo]);}
+function cuts(K){
+  if(cutsCache[K])return cutsCache[K];
+  cutsCache[K]=FEAT.map(function(_,j){var v=TR.map(function(i){return D.X[i][j];}).sort(function(a,b){return a-b;});var c=[];for(var k=1;k<K;k++)c.push(quantile(v,k/K));return c;});
+  return cutsCache[K];
+}
+function bins(K){
+  if(binCache[K])return binCache[K];
+  var c=cuts(K);
+  binCache[K]=D.X.map(function(row){return row.map(function(v,j){var b=0;for(var k=0;k<c[j].length;k++)if(v>c[j][k])b++;return b;});});
+  return binCache[K];
+}
+function fit(feats,K,alpha){
+  var bn=bins(K),cnt={1:{},0:{}},n={1:0,0:0};
+  feats.forEach(function(j){cnt[1][j]=new Array(K).fill(0);cnt[0][j]=new Array(K).fill(0);});
+  TR.forEach(function(i){var c=D.y[i];n[c]++;feats.forEach(function(j){cnt[c][j][bn[i][j]]++;});});
+  var L={1:{},0:{}};
+  [0,1].forEach(function(c){feats.forEach(function(j){L[c][j]=cnt[c][j].map(function(k){return (k+alpha)/(n[c]+K*alpha);});});});
+  return {feats:feats,K:K,alpha:alpha,cnt:cnt,n:n,L:L,prior:n[1]/(n[1]+n[0]),bn:bn};
+}
+function lik(m,i){
+  var lm=1,lb=1;m.feats.forEach(function(j){var b=m.bn[i][j];lm*=m.L[1][j][b];lb*=m.L[0][j][b];});
+  return {lm:lm,lb:lb};
+}
+function evaluate(m,prior){
+  var r={TP:0,FP:0,FN:0,TN:0,undef:0,extreme:0,exact:0,posts:{}};
+  TE.forEach(function(i){
+    var l=lik(m,i),q=post(prior===undefined?m.prior:prior,l.lm,l.lb);r.posts[i]=q;
+    if(!isFinite(q)){r.undef++;return;}
+    if(q>0.99||q<0.01)r.extreme++;
+    if(q===0||q===1)r.exact++;
+    var yhat=q>=0.5?1:0,y=D.y[i];
+    if(yhat&&y)r.TP++;else if(yhat&&!y)r.FP++;else if(!yhat&&y)r.FN++;else r.TN++;
+  });
+  var dec=r.TP+r.FP+r.FN+r.TN;
+  r.acc=(r.TP+r.TN)/dec; r.sens=r.TP/(r.TP+r.FN); r.spec=r.TN/(r.TN+r.FP); r.extShare=r.extreme/TE.length;
+  return r;
+}
+function binLabel(K,b){return K===3?["Low","Medium","High"][b]:["Very low","Low","Medium","High","Very high"][b];}
+function edgeLabel(c,b){var f=function(x){return sig(x,4);};if(b===0)return "≤ "+f(c[0]);if(b===c.length)return "> "+f(c[c.length-1]);return f(c[b-1])+" to "+f(c[b]);}
+
+function renderChecks(){
+  $("featChecks").innerHTML=FEAT.map(function(f,j){
+    return '<label><input type="checkbox" data-j="'+j+'"'+(Bst.feats.indexOf(j)>=0?" checked":"")+'><span>'+f.label+'<small>'+f.hint+'</small></span></label>';
+  }).join("")+'<p class="muted" style="font-size:.82rem;margin:4px 0 0;grid-column:1/-1">"Worst" means the average of the three largest values in the image; "mean" averages every nucleus.</p>';
+}
+var model,res;
+function renderB(){
+  model=fit(Bst.feats,Bst.K,Bst.alpha);
+  res=evaluate(model);
+  var c=cuts(Bst.K),m=model;
+  /* step 1 */
+  $("bPrior").innerHTML='<span class="t prior">P(M)</span> = '+m.n[1]+' ÷ '+(m.n[1]+m.n[0])+' = <b>'+sig(m.prior,4)+'</b> and <span class="t prior">P(B)</span> = '+m.n[0]+' ÷ '+(m.n[1]+m.n[0])+' = <b>'+sig(1-m.prior,4)+'</b>';
+  /* step 2 */
+  var anyZero=false;
+  $("bLik").innerHTML=m.feats.map(function(j){
+    var h='<div class="lt"><table><caption>'+FEAT[j].label+'</caption><thead><tr><th>Bin</th><th>Range</th><th>M count</th><th>P(bin | M)</th><th>B count</th><th>P(bin | B)</th></tr></thead><tbody>';
+    for(var b=0;b<m.K;b++){
+      var zm=m.L[1][j][b]===0,zb=m.L[0][j][b]===0; anyZero=anyZero||zm||zb;
+      h+='<tr><td>'+binLabel(m.K,b)+'</td><td>'+edgeLabel(c[j],b)+'</td><td>'+m.cnt[1][j][b]+'</td><td class="pm'+(zm?" zero":"")+'">'+sig(m.L[1][j][b],3)+'</td><td>'+m.cnt[0][j][b]+'</td><td class="pb'+(zb?" zero":"")+'">'+sig(m.L[0][j][b],3)+'</td></tr>';
+    }
+    return h+'</tbody></table></div>';
+  }).join("");
+  $("bLikNote").innerHTML=(m.alpha?'Each likelihood is (count + 1) ÷ (class total + '+m.K+'), so malignant cells divide by '+(m.n[1]+m.K)+' and benign cells by '+(m.n[0]+m.K)+'. Adding 1 keeps any bin from having probability zero.':
+    'Each likelihood is count ÷ class total, so malignant cells divide by '+m.n[1]+' and benign cells by '+m.n[0]+'.')+
+    (anyZero?' <b style="color:var(--post)">Highlighted cells are exactly zero: any patient who lands in one gets a product of zero for that class, whatever every other feature says.</b>':(m.alpha?'':' No bin is empty at this setting. Switch to 5 bins to see what happens when one is.'));
+  /* step 3 */
+  $("bCM").innerHTML='<table class="cm"><caption>Test patients, biopsy result against model call</caption><thead><tr><th></th><th scope="col">Model says malignant</th><th scope="col">Model says benign</th></tr></thead><tbody>'+
+    '<tr><th scope="row">Biopsy malignant (64)</th><td class="tp">'+res.TP+'</td><td class="err">'+res.FN+'</td></tr>'+
+    '<tr><th scope="row">Biopsy benign (107)</th><td class="err">'+res.FP+'</td><td class="tn">'+res.TN+'</td></tr></tbody></table>'+
+    (res.undef?'<p style="color:var(--post);font-weight:700;margin:10px 0 0">'+res.undef+' patients get 0 ÷ 0: both class products are zero, so the model cannot answer at all.</p>':'');
+  $("bCap4").innerHTML='<b>Figure 2.4.</b> The model calls a mass malignant when P(M | features) ≥ 50%. Features: '+m.feats.map(function(j){return FEAT[j].label;}).join(", ")+'; '+m.K+' bins; Laplace smoothing '+(m.alpha?"on":"off")+'.';
+  $("bMetrics").innerHTML='<h4>Test-set performance</h4><dl>'+
+    '<dt>Accuracy</dt><dd>'+pct(res.acc)+'</dd>'+
+    '<dt>Sensitivity P(says M | M)</dt><dd>'+pct(res.sens)+'</dd>'+
+    '<dt>Specificity P(says B | B)</dt><dd>'+pct(res.spec)+'</dd>'+
+    '<dt>Posteriors above 99% or below 1%</dt><dd>'+pct(res.extShare)+'</dd>'+
+    '<dt>Posteriors of exactly 0% or 100%</dt><dd>'+res.exact+' of '+TE.length+'</dd></dl>'+
+    '<p class="note">The last two lines measure confidence, not correctness. A model can be very sure and still wrong.</p>';
+  renderIndep();
+  renderPatients();
+}
+function renderIndep(){
+  var base=Bst.feats.filter(function(j){return j!==2&&j!==3;});
+  if(base.indexOf(1)<0)base=base.concat([1]); base.sort();
+  var ext=base.concat([2,3]).sort();
+  var r1=evaluate(fit(base,Bst.K,Bst.alpha)),r2=evaluate(fit(ext,Bst.K,Bst.alpha));
+  var hasTrio=Bst.feats.indexOf(2)>=0&&Bst.feats.indexOf(3)>=0;
+  $("bIndep").innerHTML='<h4>Independence check: counting size three times</h4>'+
+    '<p class="note" style="margin-top:0">Perimeter and area are almost fixed functions of radius, so they add no new evidence. Naive Bayes still multiplies their likelihoods as if they were three independent witnesses. Both columns use the other features you selected.</p>'+
+    '<table><thead><tr><th></th><th>Radius only</th><th>Radius, perimeter, area</th></tr></thead><tbody>'+
+    '<tr><td>Accuracy</td><td>'+pct(r1.acc)+'</td><td>'+pct(r2.acc)+'</td></tr>'+
+    '<tr><td>Sensitivity</td><td>'+pct(r1.sens)+'</td><td>'+pct(r2.sens)+'</td></tr>'+
+    '<tr><td>Specificity</td><td>'+pct(r1.spec)+'</td><td>'+pct(r2.spec)+'</td></tr>'+
+    '<tr><td>Posteriors above 99% or below 1%</td><td>'+pct(r1.extShare)+'</td><td>'+pct(r2.extShare)+'</td></tr></tbody></table>'+
+    '<button class="btn" id="trioBtn">'+(hasTrio?"Remove perimeter and area from the model":"Add perimeter and area to the model")+'</button>';
+}
+function renderPatients(){
+  var sel=$("patSel");
+  if(!sel.options.length){
+    sel.innerHTML=TE.map(function(i,k){return '<option value="'+i+'">Patient '+(k+1)+' (biopsy: '+(D.y[i]?"malignant":"benign")+')</option>';}).join("");
+  }
+  if(Bst.pat===null){var f=flippers();Bst.pat=f.length?f[0]:TE[0];}
+  sel.value=String(Bst.pat);
+  renderPatient();
+}
+function flippers(){
+  var out=[];
+  TE.forEach(function(i){var l=lik(model,i),a=post(model.prior,l.lm,l.lb),b=post(Bst.pop,l.lm,l.lb);
+    if(isFinite(a)&&isFinite(b)&&(a>=0.5)!==(b>=0.5))out.push(i);});
+  return out;
+}
+function renderPatient(){
+  var i=Bst.pat,m=model,c=cuts(m.K),l=lik(m,i),q=post(m.prior,l.lm,l.lb),k=TE.indexOf(i)+1;
+  var h='<table><caption>Patient '+k+': what the model sees</caption><thead><tr><th>Feature</th><th>Measured</th><th>Bin</th><th>P(bin | M)</th><th>P(bin | B)</th><th>Evidence ratio M : B</th></tr></thead><tbody>';
+  m.feats.forEach(function(j){
+    var b=m.bn[i][j],pm=m.L[1][j][b],pb=m.L[0][j][b];
+    h+='<tr><td>'+FEAT[j].label+'</td><td>'+sig(D.X[i][j],4)+'</td><td class="bin">'+binLabel(m.K,b)+'</td><td>'+sig(pm,3)+'</td><td>'+sig(pb,3)+'</td><td>'+(pb===0?(pm===0?"0 : 0":"∞"):sig(pm/pb,3))+'</td></tr>';
+  });
+  h+='<tr class="hl"><td colspan="3"><b>Product over features</b></td><td><b>'+sig(l.lm,4)+'</b></td><td><b>'+sig(l.lb,4)+'</b></td><td><b>'+(l.lb===0?"∞":sig(l.lm/l.lb,3))+'</b></td></tr></tbody></table>';
+  $("bPat").innerHTML=h;
+  var num=m.prior*l.lm,den=num+(1-m.prior)*l.lb;
+  $("bPatWork").innerHTML='<span class="t post">P(M | features)</span> = (<span class="t prior">'+sig(m.prior,4)+'</span> × <span class="t lik">'+sig(l.lm,4)+'</span>) / (<span class="t prior">'+sig(m.prior,4)+'</span> × <span class="t lik">'+sig(l.lm,4)+'</span> + <span class="t prior">'+sig(1-m.prior,4)+'</span> × <span class="t lik">'+sig(l.lb,4)+'</span>) = '+
+    sig(num,4)+' / '+sig(den,4)+' = <b style="color:var(--post)">'+pct(q)+'</b>. Model says <b>'+(!isFinite(q)?"nothing (0 ÷ 0)":(q>=0.5?"malignant":"benign"))+'</b>; the biopsy said <b>'+(D.y[i]?"malignant":"benign")+'</b>.';
+  $("bCap5").innerHTML='<b>Figure 2.5.</b> Naive Bayes for one test patient. Each feature contributes one likelihood per class; the products are combined with the prior by Bayes\' rule. The evidence ratio shows how strongly each feature points toward malignant (above 1) or benign (below 1).';
+  renderShift();
+}
+function renderShift(){
+  var i=Bst.pat,m=model,l=lik(m,i),q0=post(m.prior,l.lm,l.lb),q1=post(Bst.pop,l.lm,l.lb);
+  var ppv0=post(m.prior,res.sens,1-res.spec),ppv1=post(Bst.pop,res.sens,1-res.spec);
+  var flips=flippers().length,flip=isFinite(q0)&&isFinite(q1)&&((q0>=0.5)!==(q1>=0.5));
+  $("bShift").innerHTML='<h4>Patient '+(TE.indexOf(i)+1)+(flip?'<span class="flip">diagnosis flips</span>':'')+'</h4>'+
+    '<div class="pair"><div><div class="lbl">Prior '+pct(m.prior)+' (dataset)</div><div class="v prior">'+pct(q0)+'</div></div>'+
+    '<div><div class="lbl">Prior '+pct(Bst.pop)+' (your setting)</div><div class="v post">'+pct(q1)+'</div></div></div>'+
+    '<p class="note">Same likelihoods ('+sig(l.lm,4)+' and '+sig(l.lb,4)+'), different prior: ('+sig(Bst.pop,3)+' × '+sig(l.lm,4)+') / ('+sig(Bst.pop,3)+' × '+sig(l.lm,4)+' + '+sig(1-Bst.pop,3)+' × '+sig(l.lb,4)+') = '+sig(q1,4)+'.</p>'+
+    '<h4 style="margin-top:14px">The whole model</h4><dl>'+
+    '<dt>Malignant calls that are right, at '+pct(m.prior)+'</dt><dd>'+pct(ppv0)+'</dd>'+
+    '<dt>Malignant calls that are right, at '+pct(Bst.pop)+'</dt><dd>'+pct(ppv1)+'</dd>'+
+    '<dt>Test patients whose call flips</dt><dd>'+flips+' of '+TE.length+'</dd></dl>'+
+    '<p class="note">The first two lines use the test sensitivity ('+pct(res.sens)+') and specificity ('+pct(res.spec)+') with Bayes\' rule, exactly as in Part A.</p>';
+  drawCurve("bCurve",[{lD:l.lm,lH:l.lb,cls:"cv"},{lD:res.sens,lH:1-res.spec,cls:"cv2"}],[
+    {p:m.prior,v:q0,cls:"m1",lc:"lab1",label:"Dataset prior: "+pct(q0),dy:-12},
+    {p:Bst.pop,v:q1,cls:"m2",lc:"lab2",label:"Your prior: "+pct(q1),dy:22}
+  ].filter(function(x){return isFinite(x.v);}));
+  $("bCurveLegend").innerHTML='<span><svg viewBox="0 0 14 14"><line x1="0" y1="7" x2="14" y2="7" stroke="var(--post)" stroke-width="3"/></svg>Patient '+(TE.indexOf(i)+1)+': P(M | features)</span>'+
+    '<span><svg viewBox="0 0 14 14"><line x1="0" y1="7" x2="14" y2="7" stroke="var(--evid)" stroke-width="3" stroke-dasharray="4 3"/></svg>Whole model: share of malignant calls that are right</span>';
+  $("bCap6").innerHTML='<b>Figure 2.6.</b> Posterior against prior with the likelihoods held fixed. The model is identical along each curve; only the assumed malignancy rate changes.';
+  $("bPopRange").value=pToT(Bst.pop); $("bPopNum").value=+(Bst.pop*100).toFixed(3);
+}
+
+$("featChecks").addEventListener("change",function(e){
+  var j=+e.target.dataset.j,on=e.target.checked;
+  if(on){Bst.feats.push(j);Bst.feats.sort();}
+  else{ if(Bst.feats.length===1){e.target.checked=true;return;} Bst.feats=Bst.feats.filter(function(x){return x!==j;}); }
+  renderB();
+});
+$("binSel").addEventListener("change",function(){Bst.K=+this.value;renderB();});
+$("smooth").addEventListener("change",function(){Bst.alpha=this.checked?1:0;renderB();});
+$("patSel").addEventListener("change",function(){Bst.pat=+this.value;renderPatient();});
+$("patRand").addEventListener("click",function(){
+  var f=flippers().filter(function(i){return i!==Bst.pat;});
+  if(!f.length){$("patRand").textContent="No patient flips at this prior; try a lower one";return;}
+  $("patRand").textContent="Show a patient whose diagnosis flips";
+  Bst.pat=f[Math.floor(Math.random()*f.length)];$("patSel").value=String(Bst.pat);renderPatient();
+});
+$("bIndep").addEventListener("click",function(e){
+  if(e.target.id!=="trioBtn")return;
+  var has=Bst.feats.indexOf(2)>=0&&Bst.feats.indexOf(3)>=0;
+  if(has)Bst.feats=Bst.feats.filter(function(j){return j!==2&&j!==3;});
+  else{[1,2,3].forEach(function(j){if(Bst.feats.indexOf(j)<0)Bst.feats.push(j);});Bst.feats.sort();}
+  renderChecks();renderB();$("trioBtn").focus();
+});
+$("bPopRange").addEventListener("input",function(){Bst.pop=tToP(+this.value);renderShift();});
+$("bPopNum").addEventListener("change",function(){Bst.pop=clamp(+this.value||1,0.1,50)/100;renderShift();});
+
+window.BayesLens=window.BayesLens||{};window.BayesLens.fit=fit;window.BayesLens.evaluate=evaluate;
+renderA();renderChecks();renderB();
+})();
+
+</script>
+<script>
+(function(){
+"use strict";
+function $(id){return document.getElementById(id);}
+function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
+function sig(x,n){n=n||3;if(!isFinite(x))return "undefined";if(x===0)return "0";return String(Number(x.toPrecision(n)));}
+function pct(x){var v=x*100,d=v>=10?0:1;return v.toFixed(d)+"%";}
+
+var CATS=[
+  {name:"Friends",letter:"F",dash:"",posts:["Sara posted 14 photos from the weekend trip","Your cousin changed their profile picture","Omar is celebrating three years at his job","Your old classmate got engaged"]},
+  {name:"News",letter:"N",dash:"7 4",posts:["Central bank holds interest rates steady","City council approves a new tram line","Heatwave expected to last through the weekend","Exam results published for the national baccalaureate"]},
+  {name:"Outrage",letter:"O",dash:"",posts:["People are furious about this new parking rule","You won't believe what this influencer said about fans","Thread: everything wrong with this viral restaurant","This referee decision has everyone arguing"]},
+  {name:"Funny clips",letter:"C",dash:"2 3",posts:["Cat versus cucumber, round twelve","When the beat drops at exactly the wrong moment","Dad attempts the new dance trend","Dog refuses to leave the beach"]},
+  {name:"Educational",letter:"E",dash:"10 3 2 3",posts:["Why the sky is blue, in 60 seconds","How vaccines train your immune system","The maths behind compound interest","What actually happens when you sleep"]}
+];
+var K=CATS.length;
+var PROFILES={outrage:[0.25,0.15,0.55,0.45,0.10],friends:[0.60,0.20,0.15,0.35,0.20],learner:[0.30,0.35,0.10,0.30,0.50]};
+var T={mode:"sim",profile:"outrage",rates:PROFILES.outrage.slice(),seed:7,guard:false,reveal:false,q:0.15,
+       n:[],s:[],hist:[],rng:null,pending:null,timer:null};
+
+/* ---------- seeded randomness ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function normal(r){var u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function gamma(k,r){ /* Marsaglia-Tsang, k >= 1 */
+  var d=k-1/3,c=1/Math.sqrt(9*d);
+  for(;;){var x=normal(r),v=1+c*x;if(v<=0)continue;v=v*v*v;var u=r();
+    if(u<1-0.0331*x*x*x*x)return d*v;if(Math.log(u)<0.5*x*x+d*(1-v+Math.log(v)))return d*v;}
+}
+function betaSample(a,b,r){var x=gamma(a,r),y=gamma(b,r);return x/(x+y);}
+function lgamma(z){var g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61503916999185,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<0.5)return Math.log(Math.PI/Math.sin(Math.PI*z))-lgamma(1-z);z-=1;var x=c[0];for(var i=1;i<g+2;i++)x+=c[i]/(z+i);var t=z+g+0.5;return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);}
+function betaPdf(x,a,b){return Math.exp((a-1)*Math.log(x)+(b-1)*Math.log(1-x)-(lgamma(a)+lgamma(b)-lgamma(a+b)));}
+
+/* ---------- the feed ---------- */
+function reset(){
+  stopAuto();
+  T.n=new Array(K).fill(0);T.s=new Array(K).fill(0);T.hist=[];T.rng=mulberry32(T.seed);T.pending=null;
+  if(T.mode==="you")T.pending=pick();
+  renderAll();
+}
+function mean(k){return (T.s[k]+1)/(T.n[k]+2);}
+function pick(){
+  var draws=CATS.map(function(_,k){return betaSample(T.s[k]+1,T.n[k]-T.s[k]+1,T.rng);});
+  var k=0;for(var j=1;j<K;j++)if(draws[j]>draws[k])k=j;
+  var reason="highest draw";
+  if(T.guard&&T.rng()<0.25){k=Math.floor(T.rng()*K);reason="guardrail (random type)";}
+  var post=CATS[k].posts[Math.floor(T.rng()*CATS[k].posts.length)];
+  return {k:k,draws:draws,means:CATS.map(function(_,j){return mean(j);}),reason:reason,post:post};
+}
+function observe(p,engaged){
+  var k=p.k,pa=T.s[k]+1,pb=T.n[k]+2;
+  T.n[k]++;if(engaged)T.s[k]++;
+  T.hist.push({k:k,e:engaged,draws:p.draws,means:p.means,reason:p.reason,before:[pa,pb],after:[T.s[k]+1,T.n[k]+2]});
+}
+function runSim(m){
+  for(var i=0;i<m&&T.hist.length<2000;i++){var p=pick();observe(p,T.rng()<T.rates[p.k]);}
+  renderAll();
+}
+function startAuto(){
+  if(T.timer){stopAuto();return;}
+  $("autoBtn").textContent="Pause";
+  T.timer=setInterval(function(){if(T.hist.length>=2000){stopAuto();return;}runSim(1);},140);
+}
+function stopAuto(){if(T.timer){clearInterval(T.timer);T.timer=null;}var b=$("autoBtn");if(b)b.textContent="Auto-scroll";}
+
+/* ---------- rendering ---------- */
+function sw(k){return '<span class="catdot" style="background:var(--c'+k+')"></span>';}
+function renderControls(){
+  document.querySelectorAll(".modes button").forEach(function(b){var on=b.dataset.m===T.mode;b.setAttribute("aria-checked",on?"true":"false");b.tabIndex=on?0:-1;});
+  $("profSel").value=T.profile;$("seed").value=T.seed;$("guard").checked=T.guard;$("reveal").checked=T.reveal;
+  var sim=T.mode==="sim";
+  $("profWrap").style.display=sim?"":"none";
+  $("reveal").parentNode.style.display=sim?"":"none";
+  $("runbar").querySelectorAll("[data-run],#autoBtn").forEach(function(b){b.style.display=sim?"":"none";});
+  var editable=sim&&T.profile==="custom", show=sim&&(T.reveal||T.profile==="custom");
+  $("rates").style.display=sim?"":"none";
+  $("rates").innerHTML=CATS.map(function(c,k){
+    return '<div class="ctl"><label for="r'+k+'">'+sw(k)+c.name+'<span>'+(show?Math.round(T.rates[k]*100)+'%':'<span class="secret">hidden</span>')+'</span></label>'+
+      (editable?'<input type="range" id="r'+k+'" data-k="'+k+'" min="1" max="95" step="1" value="'+Math.round(T.rates[k]*100)+'" style="accent-color:var(--c'+k+')" aria-label="True engagement rate for '+c.name+'">':'')+'</div>';
+  }).join("");
+  $("postCount").textContent=T.hist.length+" posts shown"+(T.hist.length>=2000?" (limit reached)":"");
+  var card=$("postCard");
+  if(T.mode==="you"&&T.pending){
+    card.hidden=false;$("pcDot").style.background="var(--c"+T.pending.k+")";$("pcCat").textContent=CATS[T.pending.k].name;$("pcText").textContent=T.pending.post;
+  } else card.hidden=true;
+}
+function renderLast(){
+  var h=T.hist[T.hist.length-1],el=$("fLast");
+  if(!h){el.innerHTML='<h4>Latest decision</h4><p class="note" style="margin-top:0">No posts yet. Every type starts at the uniform prior, with posterior mean (0 + 1) / (0 + 2) = 0.5.</p>';return;}
+  var rows=CATS.map(function(c,k){return '<tr'+(k===h.k?' class="win"':'')+'><td>'+sw(k)+c.name+'</td><td>'+sig(h.means[k],3)+'</td><td>'+sig(h.draws[k],3)+'</td></tr>';}).join("");
+  el.innerHTML='<h4>Post '+T.hist.length+': '+CATS[h.k].name+' was shown</h4>'+
+    '<table><thead><tr><th>Type</th><th>Belief (mean)</th><th>Random draw</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<p class="note">Chosen by '+h.reason+'. The user '+(h.e?'<b>engaged</b>':'<b>scrolled past</b>')+'.</p>'+
+    '<p class="note" style="color:var(--ink)">Bayes update for '+CATS[h.k].name+': ('+(h.before[0]-1)+' + 1) / ('+(h.before[1]-2)+' + 2) = '+sig(h.before[0]/h.before[1],3)+
+    ' becomes ('+(h.after[0]-1)+' + 1) / ('+(h.after[1]-2)+' + 2) = <b style="color:var(--post)">'+sig(h.after[0]/h.after[1],3)+'</b>.</p>';
+}
+function renderStrip(){
+  var W=640,sz=20,gap=3,max=Math.floor((W+gap)/(sz+gap)),rec=T.hist.slice(-max),o="";
+  rec.forEach(function(h,i){
+    var x=W-(rec.length-i)*(sz+gap)+gap,y=14,c="var(--c"+h.k+")";
+    o+=h.e?'<rect x="'+x+'" y="'+y+'" width="'+sz+'" height="'+sz+'" rx="4" fill="'+c+'"/><text x="'+(x+sz/2)+'" y="'+(y+14)+'" fill="var(--panel)">'+CATS[h.k].letter+'</text>'
+          :'<rect x="'+(x+1)+'" y="'+(y+1)+'" width="'+(sz-2)+'" height="'+(sz-2)+'" rx="4" fill="none" stroke="'+c+'" stroke-width="2"/><text x="'+(x+sz/2)+'" y="'+(y+14)+'" fill="'+c+'">'+CATS[h.k].letter+'</text>';
+  });
+  if(!rec.length)o='<text x="320" y="30" text-anchor="middle" fill="var(--muted)" style="font-size:13px;font-weight:400">Show a post to start the feed.</text>';
+  $("strip").innerHTML=o;$("strip").setAttribute("class","strip");
+  $("stripLegend").innerHTML=CATS.map(function(c,k){return '<span>'+sw(k)+c.letter+' = '+c.name+'</span>';}).join("");
+  $("fCap1").innerHTML='<b>Figure 3.1.</b> The last '+rec.length+' posts. Filled tiles: the user engaged. Outlined tiles: the user scrolled past.';
+}
+function renderTable(){
+  var N=T.hist.length,sim=T.mode==="sim",showTrue=sim&&(T.reveal||T.profile==="custom");
+  var h='<table><caption>Posterior belief per content type after '+N+' posts</caption><thead><tr><th>Type</th><th>Views n</th><th>Engaged s</th><th>Posterior mean (s + 1) / (n + 2)</th>'+(showTrue?'<th>True rate</th>':'')+'<th>Share of feed</th></tr></thead><tbody>';
+  CATS.forEach(function(c,k){
+    h+='<tr><td>'+sw(k)+c.name+'</td><td>'+T.n[k]+'</td><td>'+T.s[k]+'</td><td class="pmean">('+T.s[k]+' + 1) / ('+T.n[k]+' + 2) = '+sig(mean(k),3)+'</td>'+
+       (showTrue?'<td>'+sig(T.rates[k],2)+'</td>':'')+'<td>'+(N?pct(T.n[k]/N):"–")+'</td></tr>';
+  });
+  $("fTable").innerHTML=h+'</tbody></table>';
+}
+function renderDens(){
+  var W=640,H=260,L=40,R=16,Tp=12,B=36,xs=[],o="";
+  for(var i=1;i<200;i++)xs.push(i/200);
+  var ys=CATS.map(function(_,k){var a=T.s[k]+1,b=T.n[k]-T.s[k]+1;return xs.map(function(x){return betaPdf(x,a,b);});});
+  var ymax=Math.max(2,Math.min(30,Math.max.apply(null,ys.map(function(a){return Math.max.apply(null,a);}))));
+  function X(x){return L+x*(W-L-R);} function Y(v){return Tp+(1-Math.min(v,ymax)/ymax)*(H-Tp-B);}
+  [0,.25,.5,.75,1].forEach(function(v){o+='<line class="axis" x1="'+X(v)+'" x2="'+X(v)+'" y1="'+Tp+'" y2="'+(H-B)+'"/><text x="'+X(v)+'" y="'+(H-B+16)+'" text-anchor="middle">'+(v*100)+'%</text>';});
+  o+='<line class="axis" x1="'+L+'" x2="'+(W-R)+'" y1="'+(H-B)+'" y2="'+(H-B)+'"/>';
+  o+='<text x="'+((L+W-R)/2)+'" y="'+(H-4)+'" text-anchor="middle">Engagement rate θ = P(engage | type)</text>';
+  o+='<text x="'+(L-8)+'" y="'+(Tp+10)+'" text-anchor="end">high</text><text x="'+(L-8)+'" y="'+(H-B)+'" text-anchor="end">low</text>';
+  ys.forEach(function(arr,k){
+    o+='<polyline fill="none" stroke="var(--c'+k+')" stroke-width="2.5" stroke-dasharray="'+CATS[k].dash+'" points="'+arr.map(function(v,i){return X(xs[i]).toFixed(1)+","+Y(v).toFixed(1);}).join(" ")+'"/>';
+    if(T.mode==="sim"&&(T.reveal||T.profile==="custom"))o+='<line x1="'+X(T.rates[k])+'" x2="'+X(T.rates[k])+'" y1="'+(H-B)+'" y2="'+(H-B-10)+'" stroke="var(--c'+k+')" stroke-width="3"/>';
+  });
+  $("dens").innerHTML=o;
+  $("densLegend").innerHTML=CATS.map(function(c,k){return '<span><svg viewBox="0 0 14 14"><line x1="0" y1="7" x2="14" y2="7" stroke="var(--c'+k+')" stroke-width="3" stroke-dasharray="'+(c.dash?c.dash.split(" ").map(function(v){return v/2;}).join(" "):"")+'"/></svg>'+c.name+'</span>';}).join("");
+  $("fCap3").innerHTML='<b>Figure 3.2.</b> The feed\'s posterior belief about each type\'s engagement rate, a Beta(s + 1, n − s + 1) distribution (Beta distributions come later in the course). Flat curves mean the feed is unsure; tall narrow curves mean it is confident.'+
+    ((T.mode==="sim"&&(T.reveal||T.profile==="custom"))?' Ticks on the axis mark the true rates.':'')+' ';
+}
+function renderShare(){
+  var W=640,H=260,L=48,R=16,Tp=12,B=36,N=T.hist.length,win=25,o="";
+  function X(i){return L+(N<=1?0:(i-1)/(N-1))*(W-L-R);} function Y(v){return Tp+(1-v)*(H-Tp-B);}
+  [0,.25,.5,.75,1].forEach(function(v){o+='<line class="axis" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text x="'+(L-8)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+(v*100)+'%</text>';});
+  o+='<text x="'+((L+W-R)/2)+'" y="'+(H-4)+'" text-anchor="middle">Post number (1 to '+N+')</text>';
+  if(N>=2){
+    var step=Math.max(1,Math.floor(N/200));
+    CATS.forEach(function(c,k){
+      var pts=[],cnt=0;
+      for(var i=0;i<N;i++){cnt+=T.hist[i].k===k?1:0;if(i>=win)cnt-=T.hist[i-win].k===k?1:0;
+        if(i%step===0||i===N-1)pts.push(X(i+1).toFixed(1)+","+Y(cnt/Math.min(i+1,win)).toFixed(1));}
+      o+='<polyline fill="none" stroke="var(--c'+k+')" stroke-width="2.5" stroke-dasharray="'+c.dash+'" points="'+pts.join(" ")+'"/>';
+    });
+  } else o+='<text x="'+((L+W)/2)+'" y="'+(H/2)+'" text-anchor="middle">Show at least 2 posts</text>';
+  $("share").innerHTML=o;
+  $("shareLegend").innerHTML=CATS.map(function(c,k){return '<span><svg viewBox="0 0 14 14"><line x1="0" y1="7" x2="14" y2="7" stroke="var(--c'+k+')" stroke-width="3" stroke-dasharray="'+(c.dash?c.dash.split(" ").map(function(v){return v/2;}).join(" "):"")+'"/></svg>'+c.name+'</span>';}).join("");
+  $("fCap4").innerHTML='<b>Figure 3.3.</b> Share of each content type among the last 25 posts (or all posts, before 25). Settings: '+
+    (T.mode==="sim"?'simulated user "'+$("profSel").selectedOptions[0].text+'"':"a real person scrolling")+', seed '+T.seed+', guardrail '+(T.guard?"on":"off")+'.';
+}
+function renderMetrics(){
+  var N=T.hist.length,eng=T.hist.filter(function(h){return h.e;}).length,sim=T.mode==="sim";
+  var h='<h4>After '+N+' posts</h4><dl><dt>Engagement rate so far</dt><dd>'+(N?pct(eng/N):"–")+'</dd>';
+  if(sim){
+    var rnd=T.rates.reduce(function(a,b){return a+b;},0)/K,best=Math.max.apply(null,T.rates),bk=T.rates.indexOf(best);
+    var last=T.hist.slice(-50),exp=last.length?last.reduce(function(a,x){return a+T.rates[x.k];},0)/last.length:rnd;
+    var topShare=last.length?last.filter(function(x){return x.k===bk;}).length/last.length:0;
+    var len=function(e){return 1/((1-e)*T.q);};
+    h+='<dt>A random feed would get</dt><dd>'+pct(rnd)+'</dd>'+
+       '<dt>Best possible (always '+CATS[bk].name+')</dt><dd>'+pct(best)+'</dd>'+
+       '<dt>Last 50 posts from '+CATS[bk].name+'</dt><dd>'+(last.length?pct(topShare):"–")+'</dd></dl>'+
+       '<h4 style="margin-top:14px">How long the user stays</h4>'+
+       '<div class="ctl"><label for="qNum">Chance of leaving after an unengaging post<span><input type="number" id="qNum" min="1" max="60" step="1" value="'+Math.round(T.q*100)+'"> %</span></label></div>'+
+       '<dl><dt>Random feed: expected posts per session</dt><dd>'+sig(len(rnd),3)+'</dd>'+
+       '<dt>This feed, recent behaviour</dt><dd>'+sig(len(exp),3)+'</dd></dl>'+
+       '<p class="note">Expected session length = 1 / ((1 − e) × q), where e is the engagement rate and q the chance of leaving after a post that does not hook. This is a geometric waiting time, covered later in the course. Recent behaviour uses the true rates of the last 50 posts shown.</p>';
+  } else {
+    h+='</dl><p class="note">In this mode the "user" is you, so there are no true rates to compare against. Watch which type takes over Figure 3.3.</p>';
+  }
+  $("fMetrics").innerHTML=h;
+}
+function renderAll(){renderControls();renderLast();renderStrip();renderTable();renderDens();renderShare();renderMetrics();}
+
+/* ---------- events ---------- */
+document.querySelector(".modes").addEventListener("click",function(e){var b=e.target.closest("button");if(!b||b.dataset.m===T.mode)return;T.mode=b.dataset.m;reset();});
+document.querySelector(".modes").addEventListener("keydown",function(e){
+  if(["ArrowLeft","ArrowRight"].indexOf(e.key)<0)return;e.preventDefault();T.mode=T.mode==="sim"?"you":"sim";reset();
+  document.querySelector('.modes button[data-m="'+T.mode+'"]').focus();
+});
+$("profSel").addEventListener("change",function(){T.profile=this.value;if(PROFILES[T.profile])T.rates=PROFILES[T.profile].slice();reset();});
+$("seed").addEventListener("change",function(){T.seed=clamp(Math.round(+this.value)||1,1,99999);reset();});
+$("guard").addEventListener("change",function(){T.guard=this.checked;reset();});
+$("reveal").addEventListener("change",function(){T.reveal=this.checked;renderAll();});
+$("rates").addEventListener("change",function(e){if(e.target.dataset.k===undefined)return;T.rates[+e.target.dataset.k]=+e.target.value/100;reset();});
+$("runbar").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+  if(b.dataset.run){stopAuto();runSim(+b.dataset.run);} else if(b.id==="autoBtn")startAuto(); else if(b.id==="resetBtn")reset();});
+$("pcStay").addEventListener("click",function(){observe(T.pending,true);T.pending=pick();renderAll();});
+$("pcSkip").addEventListener("click",function(){observe(T.pending,false);T.pending=pick();renderAll();});
+$("fMetrics").addEventListener("change",function(e){if(e.target.id==="qNum"){T.q=clamp(+e.target.value||15,1,60)/100;renderMetrics();}});
+document.addEventListener("visibilitychange",function(){if(document.hidden)stopAuto();});
+document.querySelectorAll('[role="tab"]').forEach(function(t){t.addEventListener("click",function(){if(t.id!=="t-feed")stopAuto();});});
+
+window.BayesLens=window.BayesLens||{};window.BayesLens.betaSample=betaSample;window.BayesLens.mulberry32=mulberry32;
+reset();
+})();
+
+</script>
+<script>
+(function(){
+"use strict";
+function $(id){return document.getElementById(id);}
+function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
+function sig(x,n){n=n||3;if(!isFinite(x))return "undefined";if(x===0)return "0";return String(Number(x.toPrecision(n)));}
+function pct(x){var v=x*100,d=v>=1&&v<=99?1:2;return v.toFixed(d)+"%";}
+
+/* ================= spam demo ================= */
+var WORDS=[
+  {w:"free",p:0.91},{w:"winner",p:0.96},{w:"click here",p:0.93},{w:"limited offer",p:0.89},{w:"unsubscribe",p:0.78},
+  {w:"meeting",p:0.07},{w:"homework",p:0.04},{w:"attached",p:0.15},{w:"professor",p:0.05},{w:"tomorrow",p:0.25}
+];
+var POISON=[{w:"library",p:0.10},{w:"grandmother",p:0.08},{w:"chapter",p:0.12},{w:"weather",p:0.20},{w:"recipe",p:0.15}];
+var SP={on:{"free":1,"winner":1,"click here":1,"meeting":1},prior:0.5,poison:false};
+function activeWords(){return WORDS.filter(function(x){return SP.on[x.w];}).concat(SP.poison?POISON.map(function(x){return {w:x.w,p:x.p,poison:true};}):[]);}
+function renderSpam(){
+  $("spamWords").innerHTML=WORDS.map(function(x){
+    return '<button class="'+(x.p>=0.5?"spam":"ham")+'" data-w="'+x.w+'" aria-pressed="'+(SP.on[x.w]?"true":"false")+'">'+x.w+'<small>'+x.p.toFixed(2)+'</small></button>';
+  }).join("")+(SP.poison?POISON.map(function(x){return '<button class="poison" disabled>'+x.w+'<small>'+x.p.toFixed(2)+'</small></button>';}).join(""):"");
+  var ws=activeWords(),a=1,b=1;
+  ws.forEach(function(x){a*=x.p;b*=1-x.p;});
+  var pi=SP.prior,num=pi*a,den=num+(1-pi)*b,q=ws.length?num/den:pi,spam=q>0.9;
+  $("spamOut").innerHTML='<h4>Filter verdict</h4><div class="verdict '+(spam?"s":"h")+'">'+(spam?"Spam":"Inbox")+'</div>'+
+    '<div class="muted" style="font-size:.92rem;margin-top:2px">P(spam | words) = <b style="color:var(--post)">'+pct(q)+'</b>; spam if above 90%, the cut-off Graham used</div>'+
+    '<p class="note" style="color:var(--ink)"><span class="t post">P(S | words)</span> = (<span class="t prior">P(S)</span> × Πp) / (<span class="t prior">P(S)</span> × Πp + <span class="t prior">P(S′)</span> × Π(1 − p))</p>'+
+    '<p class="note">Πp = '+(ws.length?ws.map(function(x){return x.p.toFixed(2);}).join(" × ")+' = '+sig(a,4):"1 (no words)")+'<br>Π(1 − p) = '+(ws.length?ws.map(function(x){return (1-x.p).toFixed(2);}).join(" × ")+' = '+sig(b,4):"1")+
+    '<br>P(S | words) = ('+sig(pi,3)+' × '+sig(a,4)+') / ('+sig(pi,3)+' × '+sig(a,4)+' + '+sig(1-pi,3)+' × '+sig(b,4)+') = '+sig(q,4)+'</p>'+
+    '<p class="note">Each p is P(spam | word), estimated on a 50/50 mix of spam and normal mail. With P(S) = 50% this is exactly Graham\'s combining formula, Πp / (Πp + Π(1 − p)).</p>';
+  renderBars(ws,pi,q);
+  $("spPriorRange").value=Math.round(pi*100);$("spPriorNum").value=Math.round(pi*100);
+  $("poisonBtn").textContent=SP.poison?"Remove the attacker's words":"Attacker adds 5 innocent words";
+}
+function renderBars(ws,pi,q){
+  var rows=[{lab:"Prior odds",v:Math.log10(pi/(1-pi)),cls:"bp"}].concat(ws.map(function(x){return {lab:x.w,v:Math.log10(x.p/(1-x.p)),cls:x.poison?"bp":(x.p>=0.5?"bs":"bh"),poison:x.poison};}));
+  var total=rows.reduce(function(s,r){return s+r.v;},0);
+  rows.push({lab:"Total",v:total,cls:"bt"});
+  var rowH=18,H=Math.max(120,rows.length*rowH+50),W=640,L=130,R=110,mid=L+(W-L-R)/2;
+  var mx=Math.max(3,Math.ceil(Math.max.apply(null,rows.map(function(r){return Math.abs(r.v);}))));
+  function X(v){return mid+v/mx*(W-L-R)/2;}
+  var o='<g class="bars">';
+  for(var t=-mx;t<=mx;t++){o+='<line class="'+(t===0?"zero":"axis")+'" x1="'+X(t)+'" x2="'+X(t)+'" y1="14" y2="'+(H-30)+'"/>';
+    o+='<text x="'+X(t)+'" y="'+(H-16)+'" text-anchor="middle">'+(t===0?"×1":(t>0?"×"+Math.pow(10,t).toLocaleString("en-US"):"÷"+Math.pow(10,-t).toLocaleString("en-US")))+'</text>';}
+  o+='<text x="'+X(-mx)+'" y="'+(H-2)+'" text-anchor="start">toward normal mail</text><text x="'+X(mx)+'" y="'+(H-2)+'" text-anchor="end">toward spam</text>';
+  rows.forEach(function(r,i){
+    var y=18+i*rowH,x0=X(0),x1=X(r.v);
+    o+='<text x="'+(L-8)+'" y="'+(y+10)+'" text-anchor="end"'+(r.cls==="bt"?' style="font-weight:700;fill:var(--ink)"':'')+'>'+r.lab+(r.poison?" (added)":"")+'</text>';
+    o+='<rect class="'+r.cls+'" x="'+Math.min(x0,x1)+'" y="'+(y+1)+'" width="'+Math.max(1,Math.abs(x1-x0))+'" height="'+(rowH-5)+'" rx="2"/>';
+    o+='<text x="'+(W-R+8)+'" y="'+(y+10)+'">'+(r.v>=0?"×":"÷")+sig(Math.pow(10,Math.abs(r.v)),3)+'</text>';
+  });
+  $("spamBars").setAttribute("viewBox","0 0 "+W+" "+H);
+  $("spamBars").innerHTML=o+'</g>';
+  $("spamCap").innerHTML='<b>Figure 4.1.</b> Each word multiplies the odds of spam by p / (1 − p). Bars use a log scale so multiplying becomes adding; the total bar is the posterior odds, '+sig(q/(1-q),3)+' to 1, which is P(spam | words) = '+pct(q)+'. Rose bars push toward spam, blue toward normal mail, grey bars are the prior and any words an attacker added.';
+}
+$("spamWords").addEventListener("click",function(e){var b=e.target.closest("button[data-w]");if(!b)return;var w=b.dataset.w;if(SP.on[w])delete SP.on[w];else SP.on[w]=1;renderSpam();var nb=document.querySelector('#spamWords button[data-w="'+w+'"]');if(nb)nb.focus();});
+$("spPriorRange").addEventListener("input",function(){SP.prior=+this.value/100;renderSpam();});
+$("spPriorNum").addEventListener("change",function(){SP.prior=clamp(+this.value||50,1,99)/100;renderSpam();});
+$("poisonBtn").addEventListener("click",function(){SP.poison=!SP.poison;renderSpam();});
+
+/* ================= live self-tests ================= */
+function runTests(){
+  var BL=window.BayesLens||{},rows=[];
+  function add(name,method,got,expected,ok){rows.push('<tr><td>'+name+'</td><td>'+method+'</td><td>'+got+'</td><td>'+expected+'</td><td class="'+(ok?"pass":"fail")+'">'+(ok?"Pass":"Fail")+'</td></tr>');}
+  var g=0.9*0.01/(0.9*0.01+0.09*0.99);
+  add("Bayes' rule, one positive test (Diagnosis)","Hand calculation: 0.009 / 0.0981",sig(g,6),"0.0917431",Math.abs(g-0.0917431)<1e-6);
+  var p=2033/249402,pp=0.635*p/(0.635*p+0.025*(1-p)),lo=1,hi=0;
+  [0.6345,0.6355].forEach(function(s){[0.9745,0.9755].forEach(function(c){var v=s*p/(s*p+(1-c)*(1-p));lo=Math.min(lo,v);hi=Math.max(hi,v);});});
+  add("Danish AI PPV against the paper (Imaging AI, Part A)","Bayes' rule with published inputs; paper reports 17.5%",sig(pp,4)+" (range "+sig(lo,4)+" to "+sig(hi,4)+")","17.5% inside the range",0.175>=lo&&0.175<=hi);
+  if(BL.fit&&BL.evaluate){
+    var r=BL.evaluate(BL.fit([0,1,4,5],3,1));
+    add("Naive Bayes, default features (Imaging AI, Part B)","Python reference and scikit-learn CategoricalNB, same split","TP "+r.TP+", FP "+r.FP+", FN "+r.FN+", TN "+r.TN,"TP 61, FP 3, FN 3, TN 104",r.TP===61&&r.FP===3&&r.FN===3&&r.TN===104);
+    var r2=BL.evaluate(BL.fit([0,1,2,3,4,5],3,1));
+    add("Naive Bayes with perimeter and area added","Same references","TP "+r2.TP+", FP "+r2.FP+", FN "+r2.FN+", TN "+r2.TN,"TP 56, FP 2, FN 8, TN 105",r2.TP===56&&r2.FP===2&&r2.FN===8&&r2.TN===105);
+    var r3=BL.evaluate(BL.fit([0,1,4,5],5,0));
+    add("Empty bins without smoothing (5 bins)","Python reference: posteriors of exactly 0 or 1",r3.exact+" of 171","74 of 171",r3.exact===74);
+  } else add("Naive Bayes checks","Model functions","not found","exposed by the Imaging AI tab",false);
+  if(BL.betaSample&&BL.mulberry32){
+    var rng=BL.mulberry32(1),n=20000,s=0;for(var i=0;i<n;i++)s+=BL.betaSample(74,51,rng);
+    add("Beta sampler behind the feed (Social feed)","Mean of 20,000 draws from Beta(74, 51) against theory a / (a + b)",sig(s/n,4),"0.592 ± 0.005",Math.abs(s/n-74/125)<0.005);
+    function run(){var r=BL.mulberry32(7),seq=[];for(var t=0;t<50;t++)seq.push(BL.betaSample(1+t%3,2,r).toFixed(8));return seq.join(",");}
+    add("Reproducible randomness","Same seed, run twice",run()===run()?"identical":"different","identical",run()===run());
+  } else add("Feed checks","Sampler functions","not found","exposed by the Social feed tab",false);
+  var pass=rows.filter(function(x){return x.indexOf('class="pass"')>=0;}).length;
+  $("selfTests").innerHTML='<table><caption>Table 4.3. Live checks, run in your browser just now: '+pass+' of '+rows.length+' passed</caption><thead><tr><th>Check</th><th>Compared against</th><th>This page computes</th><th>Expected</th><th>Result</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>';
+}
+$("rerunTests").addEventListener("click",runTests);
+
+renderSpam();runTests();
+})();
+
+</script>
+</body>
+</html>
